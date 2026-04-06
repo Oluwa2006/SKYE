@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Upload, X, Check, Loader2, Plus } from "lucide-react";
+import { UploadSimple, X, Check, CircleNotch, Plus } from "@phosphor-icons/react";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function Toggle({ enabled, onChange }: { enabled: boolean; onChange: () => void }) {
@@ -54,7 +54,7 @@ function ImageUpload({ value, onChange, label, folder = "brand" }: { value: stri
           <div className="relative group">
             <img src={value} className="w-16 h-16 rounded-xl object-cover border border-glass" />
             <button onClick={() => onChange("")} className="absolute -top-1.5 -right-1.5 w-5 h-5 glass-card border border-glass rounded-full flex items-center justify-center text-dm hover:text-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition">
-              <X size={10} />
+              <X size={10} weight="regular" />
             </button>
           </div>
         ) : null}
@@ -63,7 +63,7 @@ function ImageUpload({ value, onChange, label, folder = "brand" }: { value: stri
           disabled={uploading}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-glass text-xs font-semibold text-dm hover:border-gray-400 hover:text-ds transition disabled:opacity-40"
         >
-          {uploading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+          {uploading ? <CircleNotch size={13} weight="regular" className="animate-spin" /> : <UploadSimple size={13} weight="regular" />}
           {uploading ? "Uploading..." : value ? "Replace" : "Upload"}
         </button>
         <input ref={ref} type="file" accept="image/*" className="hidden" onChange={handleFile} />
@@ -102,7 +102,7 @@ function PhotoGallery({ photos, onChange }: { photos: string[]; onChange: (photo
           <div key={i} className="relative group">
             <img src={url} className="w-20 h-20 rounded-xl object-cover border border-glass" />
             <button onClick={() => onChange(photos.filter((_, j) => j !== i))} className="absolute -top-1.5 -right-1.5 w-5 h-5 glass-card border border-glass rounded-full flex items-center justify-center text-dm hover:text-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition">
-              <X size={10} />
+              <X size={10} weight="regular" />
             </button>
           </div>
         ))}

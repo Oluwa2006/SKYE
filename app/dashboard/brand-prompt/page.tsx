@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { PenLine, CheckCircle2 } from "lucide-react";
+import { PencilLine, CheckCircle } from "@phosphor-icons/react";
 
 export default function BrandPromptPage() {
   const [saved, setSaved] = useState("");        // the last saved value
@@ -67,7 +67,7 @@ export default function BrandPromptPage() {
             onClick={handleEdit}
             className="flex items-center gap-2 px-4 py-2 rounded-lg border border-glass text-sm font-semibold text-ds hover:glass-sub transition"
           >
-            <PenLine size={13} strokeWidth={1.8} />
+            <PencilLine size={13} weight="regular" />
             Edit
           </button>
         )}
@@ -78,7 +78,7 @@ export default function BrandPromptPage() {
           <p className="text-xs font-semibold text-dm uppercase tracking-widest">Your business context</p>
           {justSaved && (
             <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-500">
-              <CheckCircle2 size={13} />
+              <CheckCircle size={13} weight="regular" />
               Saved
             </span>
           )}

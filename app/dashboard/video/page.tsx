@@ -16,7 +16,7 @@ import {
 type AspectRatio  = "9:16" | "1:1" | "16:9";
 type Duration     = "5" | "10";
 type Mode         = "std" | "pro";
-type Provider     = "kling" | "pika";
+type Provider     = "higgsfield" | "kling" | "pika";
 type SceneStatus  = "idle" | "submitting" | "processing" | "done" | "error";
 type BottomTab    = "settings" | "camera" | "fx";
 
@@ -35,6 +35,8 @@ interface Scene {
   taskId:    string | null;
   errorMsg:  string | null;
   elapsed:   number;
+  // Engine is locked per-scene at generation time — never shared across scenes
+  lockedEngine: Provider | null;  // null = not yet generated
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -70,20 +72,57 @@ const PIKA_EFFECTS = [
 function uid()      { return Math.random().toString(36).slice(2, 9); }
 function fmtTime(s: number) { return `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`; }
 function newScene(prompt = ""): Scene {
-  return { id: uid(), prompt, imageUrl: null, status: "idle", videoUrl: null, taskId: null, errorMsg: null, elapsed: 0 };
+  return { id: uid(), prompt, imageUrl: null, status: "idle", videoUrl: null, taskId: null, errorMsg: null, elapsed: 0, lockedEngine: null };
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────
+// ─── Engine routing logic ────────────────────────────────────────────────────
+type ContentType = "lifestyle" | "environmental" | "product" | null;
+
+const CONTENT_ROUTE: Record<NonNullable<ContentType>, Provider> = {
+  lifestyle:     "higgsfield",  // people, emotion, human movement
+  environmental: "kling",       // scenes, locations, camera motion
+  product:       "pika",        // still images animated, product close-ups
+};
+
+const CONTENT_LABELS: Record<NonNullable<ContentType>, { label: string; hint: string; icon: string }> = {
+  lifestyle:     { label: "People & Lifestyle", hint: "→ Higgsfield",  icon: "🧍" },
+  environmental: { label: "Environment & Scene",hint: "→ Kling 2.6",   icon: "🏙️" },
+  product:       { label: "Product / Still",    hint: "→ Pika 2.0",    icon: "📦" },
+};
+
 export default function VideoStudioPage() {
-  const [provider,     setProvider]     = useState<Provider>("kling");
-  const [aspectRatio,  setAspectRatio]  = useState<AspectRatio>("9:16");
-  const [duration,     setDuration]     = useState<Duration>("5");
-  const [mode,         setMode]         = useState<Mode>("pro");
-  const [cfgScale,     setCfgScale]     = useState(0.5);
-  const [negPrompt,    setNegPrompt]    = useState("blur, distort, low quality, shaky cam, watermark");
-  const [cameraType,   setCameraType]   = useState("static");
-  const [pikaffect,    setPikaffect]    = useState("none");
-  const [bottomTab,    setBottomTab]    = useState<BottomTab>("settings");
+  const [provider,        setProvider]        = useState<Provider>("higgsfield");
+  const [contentType,     setContentType]     = useState<ContentType>(null);
+  const [manualOverride,  setManualOverride]  = useState(false);
+  const [aspectRatio,     setAspectRatio]     = useState<AspectRatio>("9:16");
+  const [duration,        setDuration]        = useState<Duration>("5");
+  const [mode,            setMode]            = useState<Mode>("pro");
+  const [cfgScale,        setCfgScale]        = useState(0.5);
+  const [negPrompt,       setNegPrompt]       = useState("blur, distort, low quality, shaky cam, watermark, blurry faces, distorted hands, jerky motion");
+  const [cameraType,      setCameraType]      = useState("static");
+  const [pikaffect,       setPikaffect]       = useState("none");
+  const [bottomTab,       setBottomTab]       = useState<BottomTab>("settings");
+
+  // Pick content type → auto-routes engine unless user has manually overridden
+  function pickContentType(ct: ContentType) {
+    setContentType(ct);
+    if (!manualOverride && ct) {
+      setProvider(CONTENT_ROUTE[ct]);
+    }
+  }
+
+  // Manual engine pick → marks as override so auto-routing won't stomp it
+  function pickEngine(eng: Provider) {
+    setProvider(eng);
+    setManualOverride(true);
+  }
+
+  // Reset override → go back to auto-routing
+  function resetToAuto() {
+    setManualOverride(false);
+    if (contentType) setProvider(CONTENT_ROUTE[contentType]);
+  }
 
   const searchParams  = useSearchParams();
   const initialPrompt = searchParams.get("prompt") ?? "";
@@ -115,7 +154,10 @@ export default function VideoStudioPage() {
     timerRefs.current[id] = setInterval(() => {
       setScenes(prev => prev.map(s => s.id === id ? { ...s, elapsed: s.elapsed + 1 } : s));
     }, 1000);
-    const route = prov === "kling" ? "/api/video/status" : "/api/video/pika-status";
+    const route =
+      prov === "higgsfield" ? "/api/video/higgsfield-status" :
+      prov === "kling"      ? "/api/video/status" :
+                              "/api/video/pika-status";
     pollRefs.current[id] = setInterval(async () => {
       try {
         const res  = await fetch(`${route}?taskId=${taskId}`);
@@ -134,22 +176,35 @@ export default function VideoStudioPage() {
   async function generateScene(id: string) {
     const scene = scenes.find(s => s.id === id);
     if (!scene || !scene.prompt.trim()) return;
+
+    // Lock the engine for this scene right now — it will NEVER change after this point.
+    // This ensures one scene = one engine = one consistent style.
+    const engine: Provider = provider;
+
     stopScene(id);
-    patchScene(id, { status: "submitting", videoUrl: null, errorMsg: null, elapsed: 0 });
-    const route = provider === "kling" ? "/api/video/generate" : "/api/video/pika-generate";
+    patchScene(id, { status: "submitting", videoUrl: null, errorMsg: null, elapsed: 0, lockedEngine: engine });
+
+    const route =
+      engine === "higgsfield" ? "/api/video/higgsfield-generate" :
+      engine === "kling"      ? "/api/video/generate" :
+                                "/api/video/pika-generate";
+
     try {
       const body: Record<string, unknown> = {
         prompt: scene.prompt, negative_prompt: negPrompt,
         aspect_ratio: aspectRatio, duration, mode, cfg_scale: cfgScale,
       };
       if (scene.imageUrl) body.image_url = scene.imageUrl;
-      if (provider === "kling" && cameraType !== "static") body.camera_control = { type: cameraType };
-      if (provider === "pika"  && pikaffect  !== "none")   body.pikaffect = pikaffect;
+      if (engine === "kling" && cameraType !== "static") body.camera_control = { type: cameraType };
+      if (engine === "pika"  && pikaffect  !== "none")   body.pikaffect = pikaffect;
+
       const res  = await fetch(route, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error ?? "Failed to submit");
+
+      // Pass the locked engine to polling — not whatever global provider is later
       patchScene(id, { status: "processing", taskId: data.taskId });
-      startPolling(id, data.taskId, provider);
+      startPolling(id, data.taskId, engine);
     } catch (err) {
       patchScene(id, { status: "error", errorMsg: err instanceof Error ? err.message : "Unknown error" });
     }
@@ -180,7 +235,12 @@ export default function VideoStudioPage() {
     });
   }
 
-  const cost         = provider === "kling" ? COST_KLING[duration] : COST_PIKA[duration];
+  const COST_MAP: Record<Provider, Record<Duration, number>> = {
+    higgsfield: { "5": 0.25, "10": 0.50 },
+    kling:      { "5": 0.35, "10": 0.70 },
+    pika:       { "5": 0.20, "10": 0.40 },
+  };
+  const cost = COST_MAP[provider][duration];
   const isPlaying    = activeScene?.status === "done" && !!activeScene?.videoUrl;
   const canGenerate  = !!(activeScene?.prompt.trim()) && activeScene?.status !== "submitting" && activeScene?.status !== "processing";
   const sceneIndex   = scenes.findIndex(s => s.id === activeId);
@@ -271,6 +331,20 @@ export default function VideoStudioPage() {
                       {scene.prompt ? `Scene ${i + 1}` : "Untitled Scene"}
                     </span>
                     <div className="flex items-center gap-1">
+                      {/* Engine lock badge — shows which engine is permanently assigned */}
+                      {scene.lockedEngine && (
+                        <span className="text-[7px] font-bold uppercase px-1 py-0.5 rounded leading-none"
+                          style={{
+                            background: scene.lockedEngine === "higgsfield" ? "rgba(120,80,200,0.15)"
+                                      : scene.lockedEngine === "kling"      ? "rgba(40,120,200,0.15)"
+                                      : "rgba(220,60,140,0.15)",
+                            color: scene.lockedEngine === "higgsfield" ? "#6040c0"
+                                 : scene.lockedEngine === "kling"      ? "#2060a0"
+                                 : "#b03080",
+                          }}>
+                          {scene.lockedEngine === "higgsfield" ? "HF" : scene.lockedEngine === "kling" ? "KL" : "PK"}
+                        </span>
+                      )}
                       {scene.status === "processing" && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />}
                       {scene.status === "done"       && <CheckCircle2 size={10} className="text-emerald-400" />}
                       {scene.status === "error"      && <AlertCircle  size={10} className="text-red-400" />}
@@ -465,21 +539,75 @@ export default function VideoStudioPage() {
             <p className="text-[10px] font-bold text-ds uppercase tracking-widest">Scene Settings</p>
           </div>
 
-          {/* Provider */}
+          {/* ── STEP 1: What are you filming? (auto-routes engine) ── */}
           <div className="px-3 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-            <p className="text-[10px] font-bold text-dm mb-2">Provider</p>
-            <div className="flex gap-1.5">
-              <button onClick={() => setProvider("kling")}
-                className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition ${provider === "kling" ? "bg-violet-50 text-violet-700" : "text-dm"}`}
-                style={provider !== "kling" ? { background: "rgba(255,255,255,0.1)" } : {}}>
-                Kling
-              </button>
-              <button onClick={() => setProvider("pika")}
-                className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition ${provider === "pika" ? "bg-pink-50 text-pink-600" : "text-dm"}`}
-                style={provider !== "pika" ? { background: "rgba(255,255,255,0.1)" } : {}}>
-                Pika
-              </button>
+            <p className="text-[10px] font-bold text-dm mb-2">What are you filming?</p>
+            <div className="flex flex-col gap-1">
+              {(Object.entries(CONTENT_LABELS) as [ContentType, typeof CONTENT_LABELS[NonNullable<ContentType>]][]).map(([ct, info]) => (
+                <button
+                  key={ct}
+                  onClick={() => pickContentType(ct)}
+                  className="w-full text-left px-2.5 py-2 rounded-lg transition"
+                  style={{
+                    background: contentType === ct ? "rgba(100,60,180,0.12)" : "rgba(255,255,255,0.07)",
+                    border: contentType === ct ? "1px solid rgba(100,60,180,0.25)" : "1px solid transparent",
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-semibold text-ds">{info.icon} {info.label}</span>
+                    <span className="text-[8px] font-bold" style={{ color: "#7050b0" }}>{info.hint}</span>
+                  </div>
+                </button>
+              ))}
             </div>
+          </div>
+
+          {/* ── STEP 2: Engine (auto-selected or manually overridden) ── */}
+          <div className="px-3 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[10px] font-bold text-dm">Engine</p>
+              <div className="flex items-center gap-1">
+                {manualOverride ? (
+                  <button onClick={resetToAuto}
+                    className="text-[8px] font-semibold px-1.5 py-0.5 rounded transition hover:opacity-80"
+                    style={{ background: "rgba(220,100,60,0.12)", color: "#c05030" }}>
+                    ✏️ manual · reset
+                  </button>
+                ) : (
+                  <span className="text-[8px] font-semibold px-1.5 py-0.5 rounded"
+                    style={{ background: "rgba(60,160,80,0.12)", color: "#308050" }}>
+                    ✦ auto
+                  </span>
+                )}
+                {activeScene?.lockedEngine && (
+                  <span className="text-[8px] font-semibold px-1.5 py-0.5 rounded"
+                    style={{ background: "rgba(100,60,180,0.12)", color: "#6040c0" }}>
+                    🔒 {activeScene.lockedEngine}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-col gap-1">
+              {([
+                { id: "higgsfield" as Provider, label: "Higgsfield",  bg: "rgba(120,80,200,0.12)", border: "rgba(120,80,200,0.3)",  color: "#6040c0" },
+                { id: "kling"      as Provider, label: "Kling 2.6",   bg: "rgba(40,120,200,0.12)", border: "rgba(40,120,200,0.3)",  color: "#2060a0" },
+                { id: "pika"       as Provider, label: "Pika 2.0",    bg: "rgba(200,60,140,0.12)", border: "rgba(200,60,140,0.3)",  color: "#a03080" },
+              ]).map(eng => (
+                <button key={eng.id} onClick={() => pickEngine(eng.id)}
+                  className="w-full text-left px-2.5 py-1.5 rounded-lg transition"
+                  style={{
+                    background: provider === eng.id ? eng.bg : "rgba(255,255,255,0.06)",
+                    border: provider === eng.id ? `1px solid ${eng.border}` : "1px solid transparent",
+                  }}>
+                  <span className="text-[10px] font-bold" style={{ color: provider === eng.id ? eng.color : undefined }}>
+                    {eng.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <p className="text-[8px] text-dm mt-2 leading-relaxed">
+              Locks to this engine when you hit Generate. Won't change mid-video.
+            </p>
           </div>
 
           {/* Timer / Duration */}
@@ -629,8 +757,8 @@ export default function VideoStudioPage() {
           <div className="flex shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
             {([
               { id: "settings" as BottomTab, icon: <Settings2 size={11} />, label: "Settings" },
-              { id: "camera"   as BottomTab, icon: <Camera    size={11} />, label: "Camera",  hidden: provider === "pika" },
-              { id: "fx"       as BottomTab, icon: <Wand2     size={11} />, label: "FX",      hidden: provider === "kling" },
+              { id: "camera"   as BottomTab, icon: <Camera    size={11} />, label: "Camera",  hidden: provider !== "kling" },
+              { id: "fx"       as BottomTab, icon: <Wand2     size={11} />, label: "FX",      hidden: provider !== "pika" },
             ])
               .filter(t => !t.hidden)
               .map(t => (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CheckCircle2, RefreshCw, Play, AlertCircle, X } from "lucide-react";
+import { CheckCircle, ArrowClockwise, Play, WarningCircle, X } from "@phosphor-icons/react";
 
 type RunStatus = "idle" | "running" | "complete" | "failed";
 
@@ -104,7 +104,7 @@ export default function RunPipelineButton() {
         {/* Done indicator + dismiss */}
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-50 border border-emerald-200">
-            <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
+            <CheckCircle size={15} weight="regular" className="text-emerald-500 shrink-0" />
             <span className="text-sm font-semibold text-emerald-700">Pipeline complete</span>
           </div>
           <button
@@ -112,7 +112,7 @@ export default function RunPipelineButton() {
             className="p-2 rounded-lg border border-glass text-dm hover:text-dp hover:glass-sub transition"
             title="Dismiss"
           >
-            <X size={13} />
+            <X size={13} weight="regular" />
           </button>
         </div>
 
@@ -122,7 +122,7 @@ export default function RunPipelineButton() {
             onClick={handleRunAgain}
             className="flex items-center gap-1.5 text-[11px] font-semibold text-blue-500 hover:text-blue-700 transition"
           >
-            <RefreshCw size={11} strokeWidth={2.2} />
+            <ArrowClockwise size={11} weight="regular" />
             Run again for new ideas
           </button>
           {lastRun?.completed_at && (
@@ -140,7 +140,7 @@ export default function RunPipelineButton() {
     return (
       <div className="flex flex-col items-start gap-2">
         <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-red-50 border border-red-200">
-          <AlertCircle size={15} className="text-red-400 shrink-0" />
+          <WarningCircle size={15} weight="regular" className="text-red-400 shrink-0" />
           <span className="text-sm font-semibold text-red-600">Pipeline failed</span>
         </div>
         <div className="flex items-center gap-3 pl-1">
@@ -163,7 +163,7 @@ export default function RunPipelineButton() {
         onClick={handleRun}
         className="rounded-lg bg-blue-600 text-white px-4 py-2.5 text-sm font-semibold hover:bg-blue-700 transition shadow-sm flex items-center gap-2"
       >
-        <Play size={13} strokeWidth={2} className="shrink-0" />
+        <Play size={13} weight="regular" className="shrink-0" />
         Run Pipeline
       </button>
       {lastRun && (

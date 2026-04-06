@@ -7,6 +7,11 @@ import { StatsDrop } from "./compositions/StatsDrop";
 import { StoryCTA } from "./compositions/StoryCTA";
 import { BeforeAfter } from "./compositions/BeforeAfter";
 import { UGCFrame } from "./compositions/UGCFrame";
+import { AdCinematic } from "./compositions/AdCinematic";
+import { AdLifestyle } from "./compositions/AdLifestyle";
+import { AdProduct } from "./compositions/AdProduct";
+import { AdEnergetic } from "./compositions/AdEnergetic";
+import { AdTextForward } from "./compositions/AdTextForward";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyComp = React.ComponentType<any>;
@@ -62,6 +67,38 @@ export const RemotionRoot: React.FC = () => (
       component={UGCFrame as AnyComp}
       durationInFrames={180} fps={FPS} width={W} height={H}
       defaultProps={{ creatorHandle: "foodiename", caption: "Can't believe how good this was 🔥", brandName: "Your Brand", primaryColor: "#6d28d9", accentColor: "#a78bfa" }}
+    />
+
+    {/* ── Agentica AI Ad Compositions ─────────────────────────────────── */}
+    <Composition
+      id="AdCinematic"
+      component={AdCinematic as AnyComp}
+      durationInFrames={600} fps={FPS} width={W} height={H}
+      defaultProps={{ videoUrl: "", hook: "This changes everything.", subtext: "Experience the difference.", cta: "Shop Now", brandName: "Agentica", primaryColor: "#1a0a0a", accentColor: "#c9a84c" }}
+    />
+    <Composition
+      id="AdLifestyle"
+      component={AdLifestyle as AnyComp}
+      durationInFrames={600} fps={FPS} width={W} height={H}
+      defaultProps={{ videoUrl: "", hook: "Made for real life.", subtext: "Built for real life.", cta: "Discover More", brandName: "Agentica", primaryColor: "#1a1a1a", accentColor: "#e07b4a" }}
+    />
+    <Composition
+      id="AdProduct"
+      component={AdProduct as AnyComp}
+      durationInFrames={600} fps={FPS} width={W} height={H}
+      defaultProps={{ videoUrl: "", hook: "The product you've been waiting for.", subtext: "Premium quality. Proven results.", cta: "Buy Now", brandName: "Agentica", primaryColor: "#0369a1", accentColor: "#38bdf8" }}
+    />
+    <Composition
+      id="AdEnergetic"
+      component={AdEnergetic as AnyComp}
+      durationInFrames={600} fps={FPS} width={W} height={H}
+      defaultProps={{ videoUrl: "", hook: "Don't miss out.", subtext: "Don't wait. Act now.", cta: "Get It Now", brandName: "Agentica", primaryColor: "#b91c1c", accentColor: "#ef4444" }}
+    />
+    <Composition
+      id="AdTextForward"
+      component={AdTextForward as AnyComp}
+      durationInFrames={600} fps={FPS} width={W} height={H}
+      defaultProps={{ videoUrl: "", hook: "Words that hit different.", subtext: "The words that matter most.", cta: "Learn More", brandName: "Agentica", primaryColor: "#111111", accentColor: "#6d28d9" }}
     />
   </>
 );

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { createSupabaseBrowser } from "@/lib/supabase-client";
-import { Mail } from "lucide-react";
+import { Envelope } from "@phosphor-icons/react";
 
 export default function LoginPage() {
   const [email, setEmail]     = useState("");
@@ -65,7 +65,7 @@ export default function LoginPage() {
           {sent ? (
             <div className="text-center space-y-4">
               <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto">
-                <Mail size={24} className="text-emerald-500" />
+                <Envelope size={24} weight="regular" className="text-emerald-500" />
               </div>
               <h1 className="text-2xl font-bold text-gray-900">Check your email</h1>
               <p className="text-sm text-gray-400">

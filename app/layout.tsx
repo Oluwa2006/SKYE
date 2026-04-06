@@ -15,8 +15,8 @@ const josefinSans = Josefin_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "SKYE",
-  description: "Marketing intelligence for food brands",
+  title: "Agentica",
+  description: "AI-powered creative intelligence platform",
   icons: {
     icon: "/logo.png",
     apple: "/logo.png",

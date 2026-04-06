@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { BarChart2, Film, Sparkles, Users } from "lucide-react";
+import { ChartBar, FilmStrip, Sparkle, Users } from "@phosphor-icons/react";
 
 // ─── Floating cards data ──────────────────────────────────────────────────
 const CARDS = [
-  { Icon: BarChart2, label: "Analytics",    sub: "Competitor scores",  rotate: "-7deg", y: "0px",   delay: "0ms"   },
-  { Icon: Film,      label: "Video Studio", sub: "Kling · Pika",       rotate: "-2deg", y: "-18px", delay: "120ms" },
-  { Icon: Sparkles,  label: "Intelligence", sub: "Behavior insights",  rotate: "3deg",  y: "-12px", delay: "240ms" },
-  { Icon: Users,     label: "UGC Creators", sub: "Find & track talent", rotate: "8deg", y: "6px",   delay: "360ms" },
+  { Icon: ChartBar,   label: "Analytics",    sub: "Competitor scores",  rotate: "-7deg", y: "0px",   delay: "0ms"   },
+  { Icon: FilmStrip,  label: "Video Studio", sub: "Kling · Pika",       rotate: "-2deg", y: "-18px", delay: "120ms" },
+  { Icon: Sparkle,    label: "Intelligence", sub: "Behavior insights",  rotate: "3deg",  y: "-12px", delay: "240ms" },
+  { Icon: Users,      label: "UGC Creators", sub: "Find & track talent", rotate: "8deg", y: "6px",   delay: "360ms" },
 ];
 
 // ─── Realistic Cloud component ───────────────────────────────────────────
@@ -236,7 +236,7 @@ export default function LandingPage() {
                     className="w-full h-16 flex items-center justify-center"
                     style={{ background: "rgba(255,255,255,0.60)" }}
                   >
-                    <Icon size={28} strokeWidth={1.5} color="#4a9fd4" />
+                    <Icon size={28} weight="duotone" color="#4a9fd4" />
                   </div>
                   {/* Label */}
                   <div className="px-2.5 py-2 border-t border-gray-100/60">

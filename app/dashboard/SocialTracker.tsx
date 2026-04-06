@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { TrendingUp, TrendingDown, RefreshCw, X, Plus } from "lucide-react";
+import { TrendUp, TrendDown, ArrowClockwise, X, Plus } from "@phosphor-icons/react";
 
 const AUTO_SYNC_PLATFORMS = ["instagram"];
 const STALE_AFTER_MS      = 23 * 60 * 60 * 1000;
@@ -125,7 +125,7 @@ function AccountCard({
             <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full ${
               growth >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"
             }`}>
-              {growth >= 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+              {growth >= 0 ? <TrendUp size={10} weight="regular" /> : <TrendDown size={10} weight="regular" />}
               {Math.abs(growth)}% follower growth
             </span>
           </div>
@@ -148,7 +148,7 @@ function AccountCard({
                 disabled={syncing}
                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold text-ds hover:text-dp hover:glass-sub transition disabled:opacity-40"
               >
-                <RefreshCw size={10} className={syncing ? "animate-spin" : ""} />
+                <ArrowClockwise size={10} weight="regular" className={syncing ? "animate-spin" : ""} />
                 {syncing ? "Syncing…" : "Sync"}
               </button>
             )}
@@ -156,7 +156,7 @@ function AccountCard({
               onClick={() => onDelete(account.id)}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold text-dm hover:text-red-500 hover:bg-red-50 transition"
             >
-              <X size={10} /> Delete
+              <X size={10} weight="regular" /> Delete
             </button>
           </div>
         </div>
@@ -388,7 +388,7 @@ export default function SocialTracker({ initial }: { initial: any[] }) {
               disabled={syncingAll}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-glass glass-card text-xs font-semibold text-ds hover:text-dp hover:glass-sub transition disabled:opacity-40"
             >
-              <RefreshCw size={11} className={syncingAll ? "animate-spin" : ""} />
+              <ArrowClockwise size={11} weight="regular" className={syncingAll ? "animate-spin" : ""} />
               Sync All
             </button>
           )}
@@ -396,7 +396,7 @@ export default function SocialTracker({ initial }: { initial: any[] }) {
             onClick={() => setShowAdd(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-semibold hover:bg-gray-700 transition"
           >
-            <Plus size={11} /> Add Account
+            <Plus size={11} weight="regular" /> Add Account
           </button>
         </div>
       </div>
@@ -423,7 +423,7 @@ export default function SocialTracker({ initial }: { initial: any[] }) {
               onClick={() => setShowAdd(true)}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gray-900 text-white text-xs font-semibold hover:bg-gray-700 transition"
             >
-              <Plus size={12} /> Add your first account
+              <Plus size={12} weight="regular" /> Add your first account
             </button>
           )}
         </div>

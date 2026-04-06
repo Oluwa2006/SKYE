@@ -4,9 +4,9 @@ import type { CSSProperties } from "react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
-  TrendingUp, TrendingDown, BarChart2,
-  Layers, Lightbulb, Zap, ChevronRight, Clock,
-} from "lucide-react";
+  TrendUp, TrendDown, ChartBar,
+  Stack, Lightbulb, Lightning, CaretRight, Clock,
+} from "@phosphor-icons/react";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 interface Source   { id: string; name: string; niche?: string; platform?: string }
@@ -81,7 +81,7 @@ function StatCard({
             background: trend === "up" ? "rgba(42,138,120,0.12)" : trend === "down" ? "rgba(192,64,90,0.1)" : "rgba(0,0,0,0.05)",
             color:      trend === "up" ? G.teal               : trend === "down" ? G.rose              : G.m,
           }}>
-          {trend === "up" ? <TrendingUp size={10} /> : trend === "down" ? <TrendingDown size={10} /> : null}
+          {trend === "up" ? <TrendUp size={10} weight="regular" /> : trend === "down" ? <TrendDown size={10} weight="regular" /> : null}
           {trendLabel}
         </div>
       )}
@@ -181,7 +181,7 @@ export default function DashboardPage() {
           style={{ color: G.h, fontFamily: "var(--font-josefin)" }}>Dashboard</h1>
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium"
           style={glass({ boxShadow: "none" })}>
-          <Clock size={13} style={{ color: G.m }} />
+          <Clock size={13} weight="regular" style={{ color: G.m }} />
           <span style={{ color: G.s }}>{dateLabel}</span>
         </div>
       </div>
@@ -191,11 +191,11 @@ export default function DashboardPage() {
 
         {/* Stat cards */}
         <div className="col-span-3 flex flex-col gap-3">
-          <StatCard icon={<Layers size={18} />}   label="Posts Scraped"    value={loading ? "—" : fmt(posts.length)}
+          <StatCard icon={<Stack size={18} weight="duotone" />}   label="Posts Scraped"    value={loading ? "—" : fmt(posts.length)}
             sub="Total collected" trend="up" trendLabel={`+${todayAnalyses} today`} color={G.blue} />
-          <StatCard icon={<BarChart2 size={18} />} label="Analyses Run"     value={loading ? "—" : fmt(analyses.length)}
+          <StatCard icon={<ChartBar size={18} weight="duotone" />} label="Analyses Run"     value={loading ? "—" : fmt(analyses.length)}
             sub="Content scored" trend={avgScore >= 6 ? "up" : "neutral"} trendLabel={`${avgScore}/10 avg`} color={G.violet} />
-          <StatCard icon={<Lightbulb size={18} />} label="Ideas Generated"  value={loading ? "—" : fmt(ideas.length)}
+          <StatCard icon={<Lightbulb size={18} weight="duotone" />} label="Ideas Generated"  value={loading ? "—" : fmt(ideas.length)}
             sub={`${approvedIdeas} approved`} trend={todayIdeas > 0 ? "up" : "neutral"} trendLabel={`+${todayIdeas} today`} color={G.teal} />
         </div>
 
@@ -269,7 +269,7 @@ export default function DashboardPage() {
           <button onClick={() => router.push("/dashboard/analysis")}
             className="flex items-center gap-1 text-[11px] font-semibold transition"
             style={{ color: G.violet }}>
-            View Intelligence <ChevronRight size={12} />
+            View Intelligence <CaretRight size={12} weight="regular" />
           </button>
         </div>
 
@@ -282,7 +282,7 @@ export default function DashboardPage() {
           </div>
         ) : recentAnalyses.length === 0 ? (
           <div className="px-5 py-12 text-center">
-            <Zap size={24} className="mx-auto mb-3" style={{ color: G.m }} />
+            <Lightning size={24} weight="duotone" className="mx-auto mb-3" style={{ color: G.m }} />
             <p className="text-sm font-medium" style={{ color: G.s }}>No analyses yet</p>
             <p className="text-xs mt-1" style={{ color: G.m }}>Run the pipeline to start generating insights</p>
           </div>
@@ -342,7 +342,7 @@ export default function DashboardPage() {
             <button onClick={() => router.push("/dashboard/analysis")}
               className="text-[11px] font-semibold flex items-center gap-1 transition"
               style={{ color: G.violet }}>
-              View all <ChevronRight size={11} />
+              View all <CaretRight size={11} weight="regular" />
             </button>
           </div>
         )}

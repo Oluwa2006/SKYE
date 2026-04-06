@@ -10,9 +10,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div
             className="min-h-screen px-7 py-7 text-[#111111]"
             style={{
-              background: "rgba(255,255,255,0.94)",
-              borderLeft: "1px solid rgba(16,16,16,0.08)",
-              backdropFilter: "blur(18px)",
+              background: "#ffffff",
+              borderLeft: "1px solid rgba(16,16,16,0.07)",
             }}
           >
             {children}

@@ -1,4 +1,5 @@
 import { createSupabaseServer } from "@/lib/supabase-server";
+import { canManageAgenticaLibrary, getCurrentTeamRole } from "@/lib/team-role";
 import { NextResponse } from "next/server";
 
 // GET /api/team — list all team members
@@ -21,6 +22,11 @@ export async function POST(req: Request) {
   const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const currentRole = await getCurrentTeamRole(supabase, user);
+  if (!canManageAgenticaLibrary(currentRole)) {
+    return NextResponse.json({ error: "Only admins can invite teammates." }, { status: 403 });
+  }
 
   const body = await req.json();
   const email = (body.email ?? "").trim().toLowerCase();
@@ -58,6 +64,11 @@ export async function DELETE(req: Request) {
   const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const currentRole = await getCurrentTeamRole(supabase, user);
+  if (!canManageAgenticaLibrary(currentRole)) {
+    return NextResponse.json({ error: "Only admins can remove teammates." }, { status: 403 });
+  }
 
   const { id } = await req.json();
   if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
