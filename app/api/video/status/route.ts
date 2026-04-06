@@ -26,10 +26,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ status: "succeed", videoUrl, taskId: rawTaskId });
     }
 
-    if (status.status === "FAILED") {
-      return NextResponse.json({ status: "failed", videoUrl: null, taskId: rawTaskId });
-    }
-
     return NextResponse.json({ status: "processing", videoUrl: null, taskId: rawTaskId });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Unknown error";

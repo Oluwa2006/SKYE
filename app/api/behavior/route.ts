@@ -1,6 +1,21 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
+type SourceAnalysis = {
+  hook_type: string | null;
+  tone: string | null;
+  score: number | null;
+  ai_summary: string | null;
+  topic: string | null;
+};
+
+type SourceSummary = {
+  name: string;
+  niche: string;
+  platform: string;
+  analyses: SourceAnalysis[];
+};
+
 export async function GET() {
   const { data: analyses, error } = await supabase
     .from("analysis")
@@ -26,10 +41,7 @@ export async function GET() {
   const hookMap = new Map<string, { count: number; totalScore: number }>();
   const toneMap = new Map<string, { count: number; totalScore: number }>();
   const ctaMap  = new Map<string, { count: number; totalScore: number }>();
-  const sourceMap = new Map<string, {
-    name: string; niche: string; platform: string;
-    analyses: { hook_type: string | null; tone: string | null; score: number | null; ai_summary: string | null; topic: string | null }[];
-  }>();
+  const sourceMap = new Map<string, SourceSummary>();
 
   for (const a of analyses) {
     const hook = a.hook_type ?? "Unknown";
@@ -50,7 +62,12 @@ export async function GET() {
     const c = ctaMap.get(cta) ?? { count: 0, totalScore: 0 };
     ctaMap.set(cta, { count: c.count + 1, totalScore: c.totalScore + score });
 
-    const existing = sourceMap.get(srcName) ?? { name: srcName, niche: srcNiche, platform: srcPlatform, analyses: [] };
+    const existing: SourceSummary = sourceMap.get(srcName) ?? {
+      name: srcName,
+      niche: srcNiche,
+      platform: srcPlatform,
+      analyses: [],
+    };
     existing.analyses.push({ hook_type: a.hook_type, tone: a.tone, score: a.score, ai_summary: a.ai_summary, topic: a.topic });
     sourceMap.set(srcName, existing);
   }

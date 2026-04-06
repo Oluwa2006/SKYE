@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { openai } from "@/lib/openai";
 import { fal } from "@fal-ai/client";
+import type {
+  KlingVideoV2MasterImageToVideoInput,
+  KlingVideoV2MasterTextToVideoInput,
+  PikaV22ImageToVideoInput,
+  PikaV22TextToVideoInput,
+} from "@fal-ai/client/endpoints";
 import { getPresetById } from "@/lib/style-presets";
 
 fal.config({ credentials: process.env.FAL_KEY_API_KEY ?? "" });
@@ -103,32 +109,54 @@ async function generateHiggsfield(prompt: string, imageUrl: string | null): Prom
 }
 
 async function generateKling(prompt: string, imageUrl: string | null): Promise<string> {
-  const modelId = imageUrl
-    ? "fal-ai/kling-video/v2/master/image-to-video"
-    : "fal-ai/kling-video/v2/master/text-to-video";
+  if (imageUrl) {
+    const modelId = "fal-ai/kling-video/v2/master/image-to-video" as const;
+    const input: KlingVideoV2MasterImageToVideoInput = {
+      prompt,
+      image_url: imageUrl,
+      negative_prompt: NEGATIVE_PROMPT,
+      duration: "5",
+    };
 
-  const input: Record<string, unknown> = {
+    const { request_id } = await fal.queue.submit(modelId, { input });
+    return `${modelId}::${request_id}`;
+  }
+
+  const modelId = "fal-ai/kling-video/v2/master/text-to-video" as const;
+  const input: KlingVideoV2MasterTextToVideoInput = {
     prompt,
     negative_prompt: NEGATIVE_PROMPT,
     aspect_ratio: "9:16",
     duration: "5",
   };
-  if (imageUrl) input.image_url = imageUrl;
 
   const { request_id } = await fal.queue.submit(modelId, { input });
   return `${modelId}::${request_id}`;
 }
 
 async function generatePika(prompt: string, imageUrl: string | null): Promise<string> {
-  const modelId = "fal-ai/pika/v2.2/pikaframes";
+  if (imageUrl) {
+    const modelId = "fal-ai/pika/v2.2/image-to-video" as const;
+    const input: PikaV22ImageToVideoInput = {
+      image_url: imageUrl,
+      prompt,
+      negative_prompt: NEGATIVE_PROMPT,
+      resolution: "1080p",
+      duration: "5",
+    };
 
-  const input: Record<string, unknown> = {
+    const { request_id } = await fal.queue.submit(modelId, { input });
+    return `${modelId}::${request_id}`;
+  }
+
+  const modelId = "fal-ai/pika/v2.2/text-to-video" as const;
+  const input: PikaV22TextToVideoInput = {
     prompt,
     negative_prompt: NEGATIVE_PROMPT,
     aspect_ratio: "9:16",
-    duration: 5,
+    resolution: "1080p",
+    duration: "5",
   };
-  if (imageUrl) input.image_url = imageUrl;
 
   const { request_id } = await fal.queue.submit(modelId, { input });
   return `${modelId}::${request_id}`;
@@ -153,7 +181,6 @@ export async function POST(req: NextRequest) {
     const { data: variant, error: varErr } = await supabase
       .from("variant_outputs")
       .select("hook, script, cta")
-      .eq("id", variant_id)
       .single();
 
     if (varErr || !variant) {
@@ -231,6 +258,7 @@ export async function POST(req: NextRequest) {
 
   // ── 5. Record the job on the variant if variant_id provided ───────────────
   if (variant_id) {
+    try {
     await supabase
       .from("variant_outputs")
       .update({
@@ -239,11 +267,11 @@ export async function POST(req: NextRequest) {
         video_engine: engine,
         video_prompt: scenePrompt,
       })
-      .eq("id", variant_id)
-      .catch((err: unknown) => {
+      .eq("id", variant_id);
+    } catch (err: unknown) {
+      console.warn("[agentica/generate-video] could not update variant:", err);
+    }
         // Non-fatal — columns may not exist yet until migration is applied
-        console.warn("[agentica/generate-video] could not update variant:", err);
-      });
   }
 
   return NextResponse.json({

@@ -4,13 +4,13 @@ import { createSupabaseServer } from "@/lib/supabase-server";
 // GET /api/agentica/variants/[requestId] — fetch outputs for a variant request
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { requestId: string } }
+  { params }: { params: Promise<{ requestId: string }> }
 ) {
   const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { requestId } = params;
+  const { requestId } = await params;
 
   const { data: request, error: reqErr } = await supabase
     .from("variant_requests")

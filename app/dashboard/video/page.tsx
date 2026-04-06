@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Sparkles, Loader2, Download, RefreshCw,
@@ -91,7 +91,7 @@ const CONTENT_LABELS: Record<NonNullable<ContentType>, { label: string; hint: st
   product:       { label: "Product / Still",    hint: "→ Pika 2.0",    icon: "📦" },
 };
 
-export default function VideoStudioPage() {
+function VideoStudioPageContent() {
   const [provider,        setProvider]        = useState<Provider>("higgsfield");
   const [contentType,     setContentType]     = useState<ContentType>(null);
   const [manualOverride,  setManualOverride]  = useState(false);
@@ -899,5 +899,13 @@ export default function VideoStudioPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function VideoStudioPage() {
+  return (
+    <Suspense fallback={<div className="min-h-[50vh]" />}>
+      <VideoStudioPageContent />
+    </Suspense>
   );
 }

@@ -109,7 +109,7 @@ function PhotoGallery({ photos, onChange }: { photos: string[]; onChange: (photo
         {photos.length < 5 && (
           <button onClick={() => ref.current?.click()} disabled={uploading}
             className="w-20 h-20 rounded-xl border-2 border-dashed border-glass flex flex-col items-center justify-center gap-1 text-dm hover:border-gray-400 hover:text-ds transition disabled:opacity-40">
-            {uploading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={18} />}
+            {uploading ? <CircleNotch size={16} className="animate-spin" /> : <Plus size={18} />}
             <span className="text-[9px] font-semibold">{uploading ? "..." : "Add"}</span>
           </button>
         )}
@@ -328,7 +328,7 @@ export default function SettingsPage() {
         {/* Save */}
         <button onClick={saveBrandKit} disabled={saving}
           className={`w-full py-3 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 ${saved ? "bg-emerald-500 text-white" : "bg-violet-800 text-white hover:bg-violet-700 disabled:opacity-50"}`}>
-          {saving ? <><Loader2 size={14} className="animate-spin" /> Saving...</> : saved ? <><Check size={14} /> Saved!</> : "Save Brand Kit"}
+          {saving ? <><CircleNotch size={14} className="animate-spin" /> Saving...</> : saved ? <><Check size={14} /> Saved!</> : "Save Brand Kit"}
         </button>
       </div>
 

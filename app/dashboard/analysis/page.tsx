@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Brain, TrendingUp, Users, Zap, BookOpen, BarChart2,
@@ -720,7 +720,7 @@ const SECTION_META: Record<Section, { title: string; subtitle: (d: BehaviorData)
 };
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
-export default function BehaviorPage() {
+function BehaviorPageContent() {
   const searchParams  = useSearchParams();
   const section       = (searchParams.get("section") ?? "overview") as Section;
   const [data, setData]       = useState<BehaviorData | null>(null);
@@ -787,5 +787,13 @@ export default function BehaviorPage() {
       {!loading && section === "actions"     && <ActionsSection     data={d} />}
       {!loading && section === "learning"    && <LearningLogSection data={d} />}
     </div>
+  );
+}
+
+export default function BehaviorPage() {
+  return (
+    <Suspense fallback={<div className="min-h-[50vh]" />}>
+      <BehaviorPageContent />
+    </Suspense>
   );
 }
