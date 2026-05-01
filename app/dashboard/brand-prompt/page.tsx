@@ -57,7 +57,7 @@ export default function BrandPromptPage() {
         <div>
           <h1 className="text-2xl font-bold text-dh tracking-tight">Brand Prompt</h1>
           <p className="text-sm text-dm mt-1">
-            This context shapes every idea, caption, and voiceover SKYE generates.
+            This context shapes every idea, caption, and voiceover Agentica generates.
           </p>
         </div>
 

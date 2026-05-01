@@ -7,9 +7,25 @@ export type AppUser = {
   id: string;
   email: string;
   display_name: string;
+  is_admin: boolean;
 } | null;
 
 const UserContext = createContext<AppUser>(null);
+
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "";
+
+function buildUser(supaUser: { id: string; email?: string; user_metadata?: Record<string, unknown> }): AppUser {
+  const email = supaUser.email ?? "";
+  return {
+    id:           supaUser.id,
+    email,
+    display_name:
+      (supaUser.user_metadata?.display_name as string) ||
+      email.split("@")[0] ||
+      "User",
+    is_admin: ADMIN_EMAIL ? email === ADMIN_EMAIL : false,
+  };
+}
 
 export function UserProvider({
   children,
@@ -24,14 +40,7 @@ export function UserProvider({
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
       if (session?.user) {
-        setUser({
-          id: session.user.id,
-          email: session.user.email ?? "",
-          display_name:
-            session.user.user_metadata?.display_name ||
-            session.user.email?.split("@")[0] ||
-            "User",
-        });
+        setUser(buildUser(session.user));
       } else {
         setUser(null);
       }
@@ -44,4 +53,8 @@ export function UserProvider({
 
 export function useUser() {
   return useContext(UserContext);
+}
+
+export function useIsAdmin() {
+  return useContext(UserContext)?.is_admin ?? false;
 }

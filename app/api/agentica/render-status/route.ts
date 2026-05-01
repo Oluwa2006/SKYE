@@ -43,7 +43,9 @@ export async function GET(req: NextRequest) {
         } catch {}
       }
 
-      return NextResponse.json({ status: "failed", outputUrl: null });
+      const errorMessage = progress.errors?.[0]?.message ?? "Lambda render failed";
+      console.error("[render-status] fatal:", errorMessage, progress.errors);
+      return NextResponse.json({ status: "failed", outputUrl: null, error: errorMessage });
     }
 
     if (progress.done) {

@@ -1,13 +1,14 @@
 import {
   AbsoluteFill, interpolate, spring, useCurrentFrame,
-  useVideoConfig, Video,
+  useVideoConfig, Video, Img,
 } from "remotion";
 import { loadFont } from "@remotion/google-fonts/Montserrat";
 
 const { fontFamily } = loadFont("normal", { weights: ["500", "700", "900"] });
 
 export interface AdProductProps {
-  videoUrl: string;
+  videoUrl?: string;
+  imageUrl?: string;
   hook: string;
   subtext?: string;
   cta: string;
@@ -17,7 +18,7 @@ export interface AdProductProps {
 }
 
 export const AdProduct: React.FC<AdProductProps> = ({
-  videoUrl, hook, cta, brandName,
+  videoUrl, imageUrl, hook, cta, brandName,
   subtext = "Premium quality. Proven results.",
   primaryColor = "#0369a1",
   accentColor  = "#38bdf8",
@@ -63,9 +64,12 @@ export const AdProduct: React.FC<AdProductProps> = ({
 
   return (
     <AbsoluteFill style={{ opacity: globalOpacity, fontFamily, overflow: "hidden", background: "#000" }}>
-      {/* Background video */}
+      {/* Background — video or image with Ken Burns */}
       <AbsoluteFill style={{ transform: `scale(${videoScale})`, transformOrigin: "center center" }}>
-        <Video src={videoUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        {imageUrl
+          ? <Img src={imageUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          : <Video src={videoUrl ?? ""} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        }
       </AbsoluteFill>
 
       {/* Bottom scrim */}

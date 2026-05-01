@@ -125,7 +125,7 @@ export default function ProfilePage() {
         <p className="text-xs font-semibold text-dm uppercase tracking-widest">Workspace</p>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-dp">SKYE</p>
+            <p className="text-sm font-medium text-dp">Agentica</p>
             <p className="text-xs text-dm mt-0.5">Intelligence Platform</p>
           </div>
           <span className="text-[10px] font-semibold px-2.5 py-1 rounded-lg glass-sub text-ds uppercase tracking-wide">Free</span>

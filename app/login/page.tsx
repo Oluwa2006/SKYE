@@ -37,8 +37,8 @@ export default function LoginPage() {
       {/* Left panel */}
       <div className="hidden lg:flex w-1/2 flex-col justify-between p-12 bg-gray-900">
         <div className="flex items-center gap-3">
-          <Image src="/logo.png" alt="SKYE" width={36} height={36} className="rounded-xl" />
-          <span className="text-white text-lg font-bold tracking-tight">SKYE</span>
+          <Image src="/logo.png" alt="Agentica" width={36} height={36} className="rounded-xl" />
+          <span className="text-white text-lg font-bold tracking-tight">Agentica</span>
         </div>
         <div>
           <p className="text-white text-3xl font-bold leading-snug mb-3">
@@ -58,8 +58,8 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-sm">
           <div className="flex items-center gap-2.5 mb-8 lg:hidden">
-            <Image src="/logo.png" alt="SKYE" width={32} height={32} className="rounded-xl" />
-            <span className="text-gray-900 text-lg font-bold">SKYE</span>
+            <Image src="/logo.png" alt="Agentica" width={32} height={32} className="rounded-xl" />
+            <span className="text-gray-900 text-lg font-bold">Agentica</span>
           </div>
 
           {sent ? (

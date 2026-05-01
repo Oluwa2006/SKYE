@@ -6,10 +6,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <UserProvider initial={null}>
       <div className="min-h-screen bg-transparent">
-        <Suspense fallback={<div className="fixed inset-y-0 left-0 w-[220px]" />}>
+        <Suspense fallback={<div className="fixed inset-y-0 left-0 w-[64px]" />}>
           <Sidebar />
         </Suspense>
-        <main className="min-h-screen pl-[220px]">
+        <main className="min-h-screen pl-[64px]">
           <div
             className="min-h-screen px-7 py-7 text-[#111111]"
             style={{

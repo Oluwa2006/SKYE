@@ -1,13 +1,14 @@
 import {
   AbsoluteFill, interpolate, spring, useCurrentFrame,
-  useVideoConfig, Video,
+  useVideoConfig, Video, Img,
 } from "remotion";
 import { loadFont } from "@remotion/google-fonts/Montserrat";
 
 const { fontFamily } = loadFont("normal", { weights: ["900"] });
 
 export interface AdEnergeticProps {
-  videoUrl: string;
+  videoUrl?: string;
+  imageUrl?: string;
   hook: string;
   subtext?: string;
   cta: string;
@@ -17,7 +18,7 @@ export interface AdEnergeticProps {
 }
 
 export const AdEnergetic: React.FC<AdEnergeticProps> = ({
-  videoUrl, hook, cta, brandName,
+  videoUrl, imageUrl, hook, cta, brandName,
   subtext = "Don't wait. Act now.",
   primaryColor = "#b91c1c",
   accentColor  = "#ef4444",
@@ -68,8 +69,11 @@ export const AdEnergetic: React.FC<AdEnergeticProps> = ({
 
   return (
     <AbsoluteFill style={{ opacity: globalOpacity, fontFamily, overflow: "hidden", background: "#000" }}>
-      {/* Background video — high energy treatment */}
-      <Video src={videoUrl} style={{ width: "100%", height: "100%", objectFit: "cover", filter: "contrast(1.15) saturate(1.25)" }} />
+      {/* Background — video or image, high energy treatment */}
+      {imageUrl
+        ? <Img src={imageUrl} style={{ width: "100%", height: "100%", objectFit: "cover", filter: "contrast(1.15) saturate(1.25)" }} />
+        : <Video src={videoUrl ?? ""} style={{ width: "100%", height: "100%", objectFit: "cover", filter: "contrast(1.15) saturate(1.25)" }} />
+      }
 
       {/* Dark overlay */}
       <AbsoluteFill style={{ background: "rgba(0,0,0,0.38)" }} />

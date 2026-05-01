@@ -126,12 +126,12 @@ export default function LandingPage() {
       >
         {/* Logo */}
         <div className="flex items-center gap-2.5">
-          <Image src="/logo.png" alt="SKYE" width={30} height={30} className="rounded-xl shadow-sm" />
+          <Image src="/logo.png" alt="Agentica" width={30} height={30} className="rounded-xl shadow-sm" />
           <span
             className="text-white font-bold text-lg tracking-tight"
             style={{ textShadow: "0 1px 6px rgba(0,0,0,0.15)" }}
           >
-            SKYE
+            Agentica
           </span>
         </div>
 
@@ -140,7 +140,7 @@ export default function LandingPage() {
           onClick={() => router.push("/login")}
           className="px-5 py-2 rounded-full bg-white/90 backdrop-blur text-gray-800 text-sm font-semibold shadow-sm hover:bg-white transition-all hover:shadow-md"
         >
-          Get Started
+          Start
         </button>
       </nav>
 
@@ -195,13 +195,13 @@ export default function LandingPage() {
             onClick={() => router.push("/login")}
             className="px-7 py-3 rounded-full bg-gray-900/90 backdrop-blur text-white text-sm font-semibold shadow-lg hover:bg-gray-900 transition-all hover:shadow-xl hover:scale-[1.03]"
           >
-            Join Beta
+            Start
           </button>
           <button
-            onClick={() => router.push("/dashboard")}
+            onClick={() => router.push("/login")}
             className="px-7 py-3 rounded-full bg-white/80 backdrop-blur text-gray-700 text-sm font-semibold shadow hover:bg-white transition-all hover:shadow-md"
           >
-            Go to Dashboard →
+            Admin Login →
           </button>
         </div>
 
@@ -271,7 +271,7 @@ export default function LandingPage() {
               <div className="w-2.5 h-2.5 rounded-full bg-amber-400/70" />
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-400/70" />
               <div className="flex-1 mx-3 h-4 rounded-full bg-gray-100/80 flex items-center justify-center">
-                <span className="text-[8px] text-gray-400">skye.app/dashboard</span>
+                <span className="text-[8px] text-gray-400">agentica.app/dashboard</span>
               </div>
             </div>
 
@@ -330,7 +330,7 @@ export default function LandingPage() {
         }}
       >
         <p className="text-white/40 text-[11px]">
-          Built for food brands · Powered by AI · © {new Date().getFullYear()} SKYE
+          Built for food brands · Powered by AI · © {new Date().getFullYear()} Agentica
         </p>
       </div>
 

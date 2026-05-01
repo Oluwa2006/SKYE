@@ -7,6 +7,9 @@ export interface StylePreset {
   icon:           string;
   accent:         string;
   full_prompt:    string;
+  example_hook:    string;
+  example_subtext: string;
+  example_cta:     string;
 }
 
 export const STYLE_PRESETS: StylePreset[] = [
@@ -20,6 +23,9 @@ export const STYLE_PRESETS: StylePreset[] = [
     accent:         "#6d28d9",
     full_prompt:
       "Cinematic slow push-in shot, warm golden hour backlight, deep rich shadows with amber highlights, shallow depth of field, 35mm film grain texture, premium aspirational mood, smooth dolly movement forward, professional colour grade.",
+    example_hook:    "This is what luxury feels like.",
+    example_subtext: "Crafted for those who demand the best.",
+    example_cta:     "Experience It Now",
   },
   {
     id:             "bold-product",
@@ -31,6 +37,9 @@ export const STYLE_PRESETS: StylePreset[] = [
     accent:         "#0369a1",
     full_prompt:
       "Clean studio product shot, pure white or light-grey background, sharp high-contrast key lighting, crisp edges, minimal composition centred on the subject, subtle gentle animation bringing it to life, professional commercial quality.",
+    example_hook:    "The product you've been waiting for.",
+    example_subtext: "Premium quality. Proven results.",
+    example_cta:     "Shop Now",
   },
   {
     id:             "ugc-authentic",
@@ -42,6 +51,9 @@ export const STYLE_PRESETS: StylePreset[] = [
     accent:         "#065f46",
     full_prompt:
       "Authentic handheld footage, natural warm daylight, casual real-life environment, genuine unposed moment, slight camera sway, social-media-native feel, soft natural shadows, approachable everyday aesthetic.",
+    example_hook:    "Honestly? I wasn't expecting this.",
+    example_subtext: "Real people. Real results.",
+    example_cta:     "Try It Today",
   },
   {
     id:             "energetic-promo",
@@ -53,6 +65,9 @@ export const STYLE_PRESETS: StylePreset[] = [
     accent:         "#b91c1c",
     full_prompt:
       "High-energy dynamic shot, bold saturated colours, fast purposeful camera pan, punchy vibrant lighting, urgent exciting mood, strong visual impact, commercial advertisement energy, high contrast vivid grade.",
+    example_hook:    "Don't sleep on this.",
+    example_subtext: "Limited time. Unlimited impact.",
+    example_cta:     "Get It Now",
   },
   {
     id:             "minimal-clean",
@@ -64,6 +79,9 @@ export const STYLE_PRESETS: StylePreset[] = [
     accent:         "#374151",
     full_prompt:
       "Minimal clean composition, soft diffused studio lighting, neutral light background, gentle subtle motion only, elegant simplicity, premium lifestyle aesthetic, calm and refined mood, no clutter.",
+    example_hook:    "Less noise. More you.",
+    example_subtext: "Designed to fit seamlessly into your life.",
+    example_cta:     "Discover More",
   },
 ];
 

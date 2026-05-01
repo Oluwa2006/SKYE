@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase-server";
+import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { canManageAgenticaLibrary, getCurrentTeamRole } from "@/lib/team-role";
 import { openai } from "@/lib/openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -67,7 +68,7 @@ async function analyzeWithGemini(videoBuffer: Buffer): Promise<GeminiAnalysis> {
   if (!apiKey) throw new Error("GEMINI_API_KEY not configured");
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-001" });
 
   const videoBase64 = videoBuffer.toString("base64");
 
@@ -118,19 +119,28 @@ async function analyzeWithGPT(frames: string[]): Promise<GPTAnalysis> {
           ...imageContent,
           {
             type: "text",
-            text: `You are a creative director analyzing reference video frames for an AI ad generation system.
+            text: `You are a senior creative director and AI video specialist analyzing reference video frames for an ad generation system. Your job is to fully describe this video so the system can recreate its style for any brand's product — with zero manual input from the admin.
 
 Analyze these frames and return ONLY valid JSON in exactly this shape — no markdown, no extra text:
 {
-  "visual_style": "precise style description (e.g. cinematic dark warm, clean minimal white, high contrast moody)",
+  "visual_style": "precise style description (e.g. cinematic dark warm tones, clean minimal white, high contrast moody)",
   "lighting": "golden hour | studio | daylight | backlit | soft diffused | neon | mixed",
-  "lighting_description": "precise description of the lighting character",
+  "lighting_description": "precise description of the lighting character and quality",
   "mood": "energetic | calm | urgent | playful | premium | authentic | aspirational",
   "color_palette": ["#hex1", "#hex2", "#hex3"],
   "grain": "none | subtle film grain | heavy grain | 35mm film | digital clean",
-  "composition": "description of how subjects are framed",
-  "texture": "description of surface textures visible",
-  "full_prompt": "a single detailed generation prompt that would recreate this visual style, 2-3 sentences"
+  "composition": "description of how subjects are framed and positioned",
+  "texture": "description of surface textures and material feel",
+  "full_prompt": "a single detailed generation prompt that would recreate this exact visual style for any product, 2-3 sentences, written for an AI video engine",
+  "suggested_title": "a short descriptive title for this style (e.g. 'Warm Cinematic Product Hero', 'High Energy Street Style')",
+  "style_category": "one of exactly: cinematic | lifestyle | product | energetic | text-forward",
+  "recommended_engine": "one of exactly: higgsfield | kling | pika — higgsfield for human lifestyle scenes, kling for environmental/landscape/product, pika for still product animation",
+  "engine_reasoning": "one sentence explaining why this engine fits this style",
+  "example_hooks": ["hook line 1 that fits this style", "hook line 2", "hook line 3"],
+  "example_ctas": ["CTA 1 that fits this style", "CTA 2", "CTA 3"],
+  "brand_fit": "description of what type of brand or product this style works best for",
+  "quality_score": 8,
+  "quality_notes": "brief notes on what makes this a good or weak reference — lighting consistency, motion quality, usability as a style anchor"
 }`,
           },
         ],
@@ -166,26 +176,51 @@ interface GPTAnalysis {
   composition: string;
   texture: string;
   full_prompt: string;
+  // Auto-classification
+  suggested_title: string;
+  style_category: "cinematic" | "lifestyle" | "product" | "energetic" | "text-forward";
+  recommended_engine: "higgsfield" | "kling" | "pika";
+  engine_reasoning: string;
+  // Hook/CTA extraction
+  example_hooks: string[];
+  example_ctas: string[];
+  brand_fit: string;
+  quality_score: number; // 1-10 — how good is this as a reference?
+  quality_notes: string;
 }
 
 function mergeAnalysis(gemini: GeminiAnalysis, gpt: GPTAnalysis) {
   return {
-    shot_type:           gemini.shot_type,
-    visual_style:        gpt.visual_style,
-    motion:              gemini.motion,
-    lighting:            gpt.lighting,
+    // Motion analysis (Gemini)
+    shot_type:            gemini.shot_type,
+    motion:               gemini.motion,
+    camera_movement:      gemini.camera_movement,
+    pacing:               gemini.pacing,
+    cut_rhythm:           gemini.cut_rhythm,
+    motion_speed:         gemini.motion_speed,
+    transition_style:     gemini.transition_style,
+    // Visual analysis (GPT)
+    visual_style:         gpt.visual_style,
+    lighting:             gpt.lighting,
     lighting_description: gpt.lighting_description,
-    mood:                gpt.mood,
-    color_palette:       gpt.color_palette,
-    grain:               gpt.grain,
-    composition:         gpt.composition,
-    texture:             gpt.texture,
-    camera_movement:     gemini.camera_movement,
-    pacing:              gemini.pacing,
-    cut_rhythm:          gemini.cut_rhythm,
-    motion_speed:        gemini.motion_speed,
-    transition_style:    gemini.transition_style,
-    full_prompt:         gpt.full_prompt,
+    mood:                 gpt.mood,
+    color_palette:        gpt.color_palette,
+    grain:                gpt.grain,
+    composition:          gpt.composition,
+    texture:              gpt.texture,
+    full_prompt:          gpt.full_prompt,
+    // Auto-classification
+    suggested_title:      gpt.suggested_title,
+    style_category:       gpt.style_category,
+    recommended_engine:   gpt.recommended_engine,
+    engine_reasoning:     gpt.engine_reasoning,
+    // Ad generation helpers
+    example_hooks:        gpt.example_hooks,
+    example_ctas:         gpt.example_ctas,
+    brand_fit:            gpt.brand_fit,
+    // Self-judging
+    quality_score:        gpt.quality_score,
+    quality_notes:        gpt.quality_notes,
   };
 }
 
@@ -193,6 +228,7 @@ function mergeAnalysis(gemini: GeminiAnalysis, gpt: GPTAnalysis) {
 
 export async function POST(req: NextRequest) {
   const supabase = await createSupabaseServer();
+  const admin    = createSupabaseAdmin();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -240,28 +276,45 @@ export async function POST(req: NextRequest) {
     // 4. Merge
     const promptJson = mergeAnalysis(geminiResult, gptResult);
 
-    // 5. Use first frame as thumbnail if none exists
+    // 5. Upload all frames to storage — thumbnail + key frames for generation anchoring
     let thumbnailUrl: string | null = null;
-    if (frames[0]) {
-      const thumbBuffer = Buffer.from(frames[0], "base64");
-      const thumbPath = `reference-library/thumbnails/${reference_id}.jpg`;
-      const { error: uploadErr } = await supabase.storage
-        .from("reference-library")
-        .upload(thumbPath, thumbBuffer, { contentType: "image/jpeg", upsert: true });
+    const keyFrameUrls: string[] = [];
 
-      if (!uploadErr) {
-        const { data: urlData } = supabase.storage
+    await Promise.all(
+      frames.map(async (frameBase64, idx) => {
+        const frameBuffer = Buffer.from(frameBase64, "base64");
+        const framePath = idx === 0
+          ? `reference-library/thumbnails/${reference_id}.jpg`
+          : `reference-library/frames/${reference_id}-${idx}.jpg`;
+
+        const { error: uploadErr } = await admin.storage
           .from("reference-library")
-          .getPublicUrl(thumbPath);
-        thumbnailUrl = urlData.publicUrl;
-      }
-    }
+          .upload(framePath, frameBuffer, { contentType: "image/jpeg", upsert: true });
 
-    // 6. Save back to DB
-    const updatePayload: Record<string, unknown> = { prompt: promptJson };
+        if (!uploadErr) {
+          const { data: urlData } = admin.storage
+            .from("reference-library")
+            .getPublicUrl(framePath);
+          if (idx === 0) {
+            thumbnailUrl = urlData.publicUrl;
+          }
+          keyFrameUrls[idx] = urlData.publicUrl;
+        }
+      })
+    );
+
+    // 6. Save back to DB — overwrite auto-classification fields
+    const updatePayload: Record<string, unknown> = {
+      prompt:         promptJson,
+      style_category: promptJson.style_category ?? "lifestyle",
+      engine:         promptJson.recommended_engine ?? "higgsfield",
+      title:          promptJson.suggested_title,
+      is_approved:    (promptJson.quality_score ?? 0) >= 6,
+      key_frames:     keyFrameUrls.filter(Boolean),
+    };
     if (thumbnailUrl) updatePayload.thumbnail_url = thumbnailUrl;
 
-    const { data: updated, error: updateErr } = await supabase
+    const { data: updated, error: updateErr } = await admin
       .from("reference_library")
       .update(updatePayload)
       .eq("id", reference_id)
@@ -270,7 +323,12 @@ export async function POST(req: NextRequest) {
 
     if (updateErr) throw new Error(updateErr.message);
 
-    return NextResponse.json({ reference: updated, analysis: promptJson });
+    return NextResponse.json({
+      reference: updated,
+      analysis: promptJson,
+      auto_approved: updatePayload.is_approved,
+      quality_score: promptJson.quality_score,
+    });
 
   } catch (err) {
     const message = err instanceof Error ? err.message : "Analysis failed";

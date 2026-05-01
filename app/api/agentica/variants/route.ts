@@ -108,13 +108,26 @@ function getBaseMeta(baseAd: Record<string, unknown>) {
   };
 }
 
+interface ProductContext {
+  product_type?:             string;
+  product_name?:             string;
+  primary_color?:            string;
+  texture?:                  string;
+  distinctive_features?:     string;
+  ad_visual_recommendation?: string;
+  target_audience?:          string;
+  brand_fit?:                string;
+  category?:                 string;
+}
+
 async function generateCandidates(args: {
   baseAd: Record<string, unknown>;
   strength: VariationStrength;
   batchSize: number;
   accepted: CandidateVariant[];
+  productContext: ProductContext | null;
 }): Promise<CandidateVariant[]> {
-  const { baseAd, strength, batchSize, accepted } = args;
+  const { baseAd, strength, batchSize, accepted, productContext } = args;
   const config = STRENGTH_CONFIG[strength];
   const { adType, angle } = getBaseMeta(baseAd);
 
@@ -124,30 +137,46 @@ async function generateCandidates(args: {
         .join("\n")
     : "None yet.";
 
-  const prompt = `You are building ad variants for controlled creative testing.
+  const brandFit = normalizeText(baseAd.brand_fit) || productContext?.brand_fit || "";
+  const title    = normalizeText(baseAd.title) || "";
 
-Base ad:
+  const productSection = productContext
+    ? `
+Product context (inject naturally — never mention these as specs, weave them into copy):
+- Product: ${productContext.product_type ?? "unknown"} (${productContext.product_name ?? ""})
+- Distinctive: ${productContext.distinctive_features ?? ""}
+- Texture/feel: ${productContext.texture ?? ""}
+- Target audience: ${productContext.target_audience ?? ""}
+- Visual hook idea: ${productContext.ad_visual_recommendation ?? ""}
+`
+    : "";
+
+  const prompt = `You are a senior direct-response creative director building ad variants for A/B testing.
+
+Base ad DNA:
+- Title: ${title}
 - Ad type: ${adType}
 - Angle: ${angle}
+- Brand fit: ${brandFit}
 - Hook: ${normalizeText(baseAd.hook)}
 - Script: ${normalizeText(baseAd.script)}
 - CTA: ${normalizeText(baseAd.cta)}
-
-Generate ${batchSize} candidate variants.
+${productSection}
+Generate ${batchSize} distinct variants. Variation level: ${strength.toUpperCase()}.
+${config.instruction}
 
 Rules:
-- Only mutate hook, script wording, and CTA.
-- Do not invent a different product, offer, audience, or channel.
-- Keep the ad type the same.
-- ${config.instruction}
-- Make every candidate clearly distinct from the already accepted variants.
-- Avoid repeating the same phrasing patterns.
-- Keep each script concise and usable as ad copy.
+- Only mutate the hook, script body, and CTA — same product, same offer, same audience
+- Each variant must open with a different emotional trigger (e.g. pain, desire, curiosity, proof, urgency)
+- Reference specific product details (texture, feature, visual) when it strengthens the copy
+- Keep scripts natural, spoken-word friendly, and under 40 words
+- CTAs should feel earned — match the energy of the script
+- Every variant must be clearly distinct from already accepted ones below
 
-Already accepted variants:
+Already accepted:
 ${acceptedContext}
 
-Return ONLY valid JSON in this exact shape:
+Return ONLY valid JSON:
 {
   "variants": [
     { "hook": "...", "script": "...", "cta": "..." }
@@ -184,6 +213,7 @@ export async function POST(req: NextRequest) {
     ? requestedStrength
     : "medium";
   const requestedCount = Math.min(10, Math.max(1, Number(body.number_of_variants ?? body.num_variants ?? 3) || 3));
+  const productContext: ProductContext | null = body.product_context ?? null;
 
   if (!baseAdId) {
     return NextResponse.json({ error: "base_ad_id is required" }, { status: 400 });
@@ -223,7 +253,7 @@ export async function POST(req: NextRequest) {
   let attempts = 0;
 
   try {
-    for (let pass = 0; pass < 4 && accepted.length < requestedCount; pass += 1) {
+    for (let pass = 0; pass < 3 && accepted.length < requestedCount; pass += 1) {
       const remaining = requestedCount - accepted.length;
       const batchSize = Math.min(remaining + 2, 6);
       const candidates = await generateCandidates({
@@ -231,6 +261,7 @@ export async function POST(req: NextRequest) {
         strength: variationStrength,
         batchSize,
         accepted,
+        productContext,
       });
 
       for (const candidate of candidates) {
@@ -247,11 +278,12 @@ export async function POST(req: NextRequest) {
         const baseSimilarity = adSimilarity(baseAd as BaseAdLike, candidate);
         const closestSibling = siblingSimilarity(candidate, accepted);
 
-        const tooFarFromBase = baseSimilarity < config.baseMin;
-        const tooCloseToBase = baseSimilarity > config.baseMax;
+        // Only reject near-exact copies — different emotional triggers naturally
+        // produce low token overlap so we do NOT enforce a minimum similarity floor.
+        const tooCloseToBase    = baseSimilarity > config.baseMax;
         const tooCloseToSibling = closestSibling > config.siblingMax;
 
-        if (tooFarFromBase || tooCloseToBase || tooCloseToSibling) {
+        if (tooCloseToBase || tooCloseToSibling) {
           filteredOut += 1;
           continue;
         }

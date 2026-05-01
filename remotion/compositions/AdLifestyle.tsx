@@ -1,13 +1,14 @@
 import {
   AbsoluteFill, interpolate, spring, useCurrentFrame,
-  useVideoConfig, Video,
+  useVideoConfig, Video, Img,
 } from "remotion";
 import { loadFont } from "@remotion/google-fonts/Montserrat";
 
 const { fontFamily } = loadFont("normal", { weights: ["400", "600", "800"] });
 
 export interface AdLifestyleProps {
-  videoUrl: string;
+  videoUrl?: string;
+  imageUrl?: string;
   hook: string;
   subtext?: string;
   cta: string;
@@ -17,7 +18,7 @@ export interface AdLifestyleProps {
 }
 
 export const AdLifestyle: React.FC<AdLifestyleProps> = ({
-  videoUrl, hook, cta, brandName,
+  videoUrl, imageUrl, hook, cta, brandName,
   subtext = "Built for real life.",
   primaryColor = "#1a1a1a",
   accentColor  = "#e07b4a",
@@ -65,9 +66,12 @@ export const AdLifestyle: React.FC<AdLifestyleProps> = ({
 
   return (
     <AbsoluteFill style={{ opacity: globalOpacity, fontFamily, overflow: "hidden", background: "#000" }}>
-      {/* Background video */}
+      {/* Background — video or image with Ken Burns */}
       <AbsoluteFill style={{ transform: `scale(${videoScale})`, transformOrigin: "center center" }}>
-        <Video src={videoUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        {imageUrl
+          ? <Img src={imageUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          : <Video src={videoUrl ?? ""} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        }
       </AbsoluteFill>
 
       {/* Warm bottom gradient */}

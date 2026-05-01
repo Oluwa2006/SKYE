@@ -23,43 +23,85 @@ const NEGATIVE_PROMPT =
 // Combines the reference's visual style with the variant's ad content
 // into a concrete video scene prompt the engine can act on.
 
+interface ReferencePromptJson {
+  shot_type?: string;
+  motion?: string;
+  camera_movement?: string;
+  pacing?: string;
+  visual_style?: string;
+  lighting?: string;
+  lighting_description?: string;
+  mood?: string;
+  color_palette?: string[];
+  grain?: string;
+  composition?: string;
+  full_prompt?: string;
+  transition_style?: string;
+}
+
 async function buildScenePrompt(args: {
   hook: string;
+  script: string;
   cta: string;
-  referenceFullPrompt: string | null;
+  referencePromptJson: ReferencePromptJson | null;
   styleCategory: string;
+  brandFit: string | null;
+  hasProductImage: boolean;
 }): Promise<string> {
-  const { hook, cta, referenceFullPrompt, styleCategory } = args;
+  const { hook, script, cta, referencePromptJson, styleCategory, brandFit, hasProductImage } = args;
 
-  const styleContext = referenceFullPrompt
-    ? `Reference visual style: ${referenceFullPrompt}`
-    : `Visual style category: ${styleCategory}`;
+  // Build rich style context from the full structured reference JSON
+  let styleContext: string;
+  if (referencePromptJson) {
+    const parts = [
+      referencePromptJson.full_prompt && `Visual style: ${referencePromptJson.full_prompt}`,
+      referencePromptJson.shot_type && `Shot type: ${referencePromptJson.shot_type}`,
+      referencePromptJson.camera_movement && `Camera: ${referencePromptJson.camera_movement}`,
+      referencePromptJson.lighting_description && `Lighting: ${referencePromptJson.lighting_description}`,
+      referencePromptJson.mood && `Mood: ${referencePromptJson.mood}`,
+      referencePromptJson.grain && referencePromptJson.grain !== "none" && `Texture: ${referencePromptJson.grain}`,
+      referencePromptJson.pacing && `Pacing: ${referencePromptJson.pacing}`,
+      referencePromptJson.color_palette?.length && `Color palette: ${referencePromptJson.color_palette.join(", ")}`,
+    ].filter(Boolean).join(". ");
+    styleContext = parts || `Style category: ${styleCategory}`;
+  } else {
+    styleContext = `Style category: ${styleCategory}`;
+  }
+
+  const brandLine = brandFit ? `Brand context: ${brandFit}` : "";
+  const imageLine = hasProductImage
+    ? "A product image is provided as the first frame anchor — describe how the product moves or is revealed, not what it looks like."
+    : "";
 
   const response = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
       {
         role: "system",
-        content:
-          "You write concise video generation prompts for AI video engines. Return only the prompt — no explanation, no quotes, no markdown.",
+        content: "You write precise, cinematic video generation prompts for AI video engines. Return only the prompt — no explanation, no quotes, no markdown.",
       },
       {
         role: "user",
-        content: `Create a single video scene prompt (max 2 sentences) for an ad with this content:
-Hook: "${hook}"
-CTA: "${cta}"
+        content: `Write a single video scene prompt (max 2 sentences, under 70 words) for an ad with this content:
 
+Hook: "${hook}"
+Script: "${script}"
+CTA: "${cta}"
+${brandLine}
+
+Style reference:
 ${styleContext}
+${imageLine}
 
 Rules:
-- Describe the VISUAL SCENE only — no text, no narration, no subtitles
-- Match the reference visual style precisely
-- The scene should feel like it naturally leads to the hook message
-- Keep it under 60 words`,
+- Describe the VISUAL SCENE only — camera movement, lighting, subject motion, atmosphere
+- No text overlays, no narration, no subtitles in the scene description
+- Match the reference style precisely — replicate the shot type, camera movement, and mood
+- The scene should visually set up and support the hook message`,
       },
     ],
-    max_tokens: 120,
-    temperature: 0.4,
+    max_tokens: 150,
+    temperature: 0.35,
   });
 
   return response.choices[0].message.content?.trim() ?? hook;
@@ -92,7 +134,7 @@ async function generateHiggsfield(prompt: string, imageUrl: string | null): Prom
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Key ${apiKey}`,
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify(body),
   });
@@ -170,25 +212,26 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { variant_id, hook: inlineHook, script: inlineScript, cta: inlineCta, reference_id, preset_id } = body;
+  const { variant_id, hook: inlineHook, script: inlineScript, cta: inlineCta, reference_id, preset_id, product_image_url, brand_fit } = body;
 
   // ── 1. Resolve variant text ───────────────────────────────────────────────
-  let hook = inlineHook ?? "";
+  let hook   = inlineHook   ?? "";
   let script = inlineScript ?? "";
-  let cta = inlineCta ?? "";
+  let cta    = inlineCta    ?? "";
 
   if (variant_id) {
     const { data: variant, error: varErr } = await supabase
       .from("variant_outputs")
       .select("hook, script, cta")
+      .eq("id", variant_id)
       .single();
 
     if (varErr || !variant) {
       return NextResponse.json({ error: "Variant not found" }, { status: 404 });
     }
-    hook = variant.hook;
+    hook   = variant.hook;
     script = variant.script;
-    cta = variant.cta;
+    cta    = variant.cta;
   }
 
   if (!hook || !cta) {
@@ -198,24 +241,21 @@ export async function POST(req: NextRequest) {
   // ── 2. Resolve style source (preset > reference > defaults) ──────────────
   let engine = "higgsfield";
   let styleCategory = "lifestyle";
-  let thumbnailUrl: string | null = null;
-  let referenceFullPrompt: string | null = null;
+  let referencePromptJson: ReferencePromptJson | null = null;
+  let referenceKeyFrames: string[] = [];
 
   if (preset_id) {
-    // Hardcoded preset — instant, no DB lookup
     const preset = getPresetById(preset_id);
     if (!preset) {
       return NextResponse.json({ error: "Preset not found" }, { status: 404 });
     }
     engine = preset.engine;
     styleCategory = preset.style_category;
-    referenceFullPrompt = preset.full_prompt;
-    thumbnailUrl = null; // presets have no anchor image, prompt alone drives the style
+    referencePromptJson = { full_prompt: preset.full_prompt };
   } else if (reference_id) {
-    // Analyzed reference video from the library
     const { data: ref, error: refErr } = await supabase
       .from("reference_library")
-      .select("engine, style_category, thumbnail_url, prompt")
+      .select("engine, style_category, prompt, key_frames")
       .eq("id", reference_id)
       .single();
 
@@ -225,16 +265,23 @@ export async function POST(req: NextRequest) {
 
     engine = ref.engine ?? "higgsfield";
     styleCategory = ref.style_category ?? "lifestyle";
-    thumbnailUrl = ref.thumbnail_url ?? null;
-    referenceFullPrompt = (ref.prompt as Record<string, string> | null)?.full_prompt ?? null;
+    referencePromptJson = (ref.prompt as ReferencePromptJson | null) ?? null;
+    referenceKeyFrames = (ref.key_frames as string[] | null) ?? [];
   }
+
+  // Anchor image: product image takes priority, then first reference key frame
+  const anchorImage: string | null =
+    product_image_url ?? referenceKeyFrames[0] ?? null;
 
   // ── 3. Build scene prompt ─────────────────────────────────────────────────
   const scenePrompt = await buildScenePrompt({
     hook,
+    script,
     cta,
-    referenceFullPrompt,
+    referencePromptJson,
     styleCategory,
+    brandFit: brand_fit ?? null,
+    hasProductImage: !!product_image_url,
   });
 
   // ── 4. Generate ───────────────────────────────────────────────────────────
@@ -242,13 +289,13 @@ export async function POST(req: NextRequest) {
 
   try {
     if (engine === "higgsfield") {
-      taskId = await generateHiggsfield(scenePrompt, thumbnailUrl);
+      taskId = await generateHiggsfield(scenePrompt, anchorImage);
     } else if (engine === "kling") {
-      taskId = await generateKling(scenePrompt, thumbnailUrl);
+      taskId = await generateKling(scenePrompt, anchorImage);
     } else if (engine === "pika") {
-      taskId = await generatePika(scenePrompt, thumbnailUrl);
+      taskId = await generatePika(scenePrompt, anchorImage);
     } else {
-      taskId = await generateHiggsfield(scenePrompt, thumbnailUrl);
+      taskId = await generateHiggsfield(scenePrompt, anchorImage);
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : "Generation failed";

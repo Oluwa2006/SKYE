@@ -237,7 +237,7 @@ export default function SettingsPage() {
     <div className="p-8 max-w-2xl mx-auto space-y-6 pb-16">
       <div>
         <h1 className="text-2xl font-bold tracking-tight" style={{ color: "#1e1038", fontFamily: "var(--font-syne)" }}>Settings</h1>
-        <p className="text-sm text-dm mt-1">Configure SKYE and your brand kit</p>
+        <p className="text-sm text-dm mt-1">Configure Agentica and your brand kit</p>
       </div>
 
       {/* ── Brand Kit ──────────────────────────────────────────────────── */}

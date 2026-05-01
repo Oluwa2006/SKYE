@@ -1,13 +1,14 @@
 import {
   AbsoluteFill, interpolate, spring, useCurrentFrame,
-  useVideoConfig, Video,
+  useVideoConfig, Video, Img,
 } from "remotion";
 import { loadFont } from "@remotion/google-fonts/Montserrat";
 
 const { fontFamily } = loadFont("normal", { weights: ["400", "700", "900"] });
 
 export interface AdTextForwardProps {
-  videoUrl: string;
+  videoUrl?: string;
+  imageUrl?: string;
   hook: string;
   subtext?: string;
   cta: string;
@@ -17,7 +18,7 @@ export interface AdTextForwardProps {
 }
 
 export const AdTextForward: React.FC<AdTextForwardProps> = ({
-  videoUrl, hook, cta, brandName,
+  videoUrl, imageUrl, hook, cta, brandName,
   subtext = "The words that matter most.",
   primaryColor = "#111111",
   accentColor  = "#6d28d9",
@@ -65,8 +66,11 @@ export const AdTextForward: React.FC<AdTextForwardProps> = ({
 
   return (
     <AbsoluteFill style={{ opacity: globalOpacity, fontFamily, overflow: "hidden", background: "#000" }}>
-      {/* Background video — heavily dimmed — text IS the ad */}
-      <Video src={videoUrl} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.3 }} />
+      {/* Background — video or image, heavily dimmed — text IS the ad */}
+      {imageUrl
+        ? <Img src={imageUrl} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.3 }} />
+        : <Video src={videoUrl ?? ""} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.3 }} />
+      }
 
       {/* Full dark overlay */}
       <AbsoluteFill style={{ background: "rgba(0,0,0,0.65)" }} />

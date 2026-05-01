@@ -1,13 +1,14 @@
 import {
   AbsoluteFill, interpolate, spring, useCurrentFrame,
-  useVideoConfig, Video,
+  useVideoConfig, Video, Img,
 } from "remotion";
 import { loadFont } from "@remotion/google-fonts/Montserrat";
 
 const { fontFamily } = loadFont("normal", { weights: ["400", "700", "900"] });
 
 export interface AdCinematicProps {
-  videoUrl: string;
+  videoUrl?: string;
+  imageUrl?: string;
   hook: string;
   subtext?: string;
   cta: string;
@@ -17,7 +18,7 @@ export interface AdCinematicProps {
 }
 
 export const AdCinematic: React.FC<AdCinematicProps> = ({
-  videoUrl, hook, cta, brandName,
+  videoUrl, imageUrl, hook, cta, brandName,
   subtext = "Experience the difference.",
   primaryColor = "#1a0a0a",
   accentColor  = "#c9a84c",
@@ -67,9 +68,12 @@ export const AdCinematic: React.FC<AdCinematicProps> = ({
 
   return (
     <AbsoluteFill style={{ opacity: globalOpacity, fontFamily, overflow: "hidden", background: "#000" }}>
-      {/* Background video — slow zoom */}
+      {/* Background — video or image with Ken Burns */}
       <AbsoluteFill style={{ transform: `scale(${videoScale})`, transformOrigin: "center center" }}>
-        <Video src={videoUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        {imageUrl
+          ? <Img src={imageUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          : <Video src={videoUrl ?? ""} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        }
       </AbsoluteFill>
 
       {/* Warm amber cinematic tint */}

@@ -101,6 +101,7 @@ export async function GET(req: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Status check failed";
     console.error("[agentica/video-status]", message);
-    return NextResponse.json({ error: message }, { status: 500 });
+    // Return failed status instead of 500 so the UI stops polling
+    return NextResponse.json({ status: "failed", videoUrl: null, task_id: taskId, error: message });
   }
 }
