@@ -84,6 +84,7 @@ function normProduct(raw: unknown, idx: number): ProductLayer {
     floor_reflection_opacity: typeof r.floor_reflection_opacity === "number" ? op(r.floor_reflection_opacity) : undefined,
     background_shape: r.background_shape ? normBgShape(r.background_shape) : undefined,
     z_layer:          pick(r.z_layer, ["behind_all_text","between_text","front"] as const, "behind_all_text"),
+    slot_type:        pick(r.slot_type, ["product","logo","lifestyle"] as const, "product"),
     image_url:        "",
   };
 }
@@ -246,7 +247,7 @@ export function normalizeSchema(raw: unknown): AdSchema {
   const text_layers  = Array.isArray(r.text_layers)  ? r.text_layers.map(normText)     : [];
   const decorative   = Array.isArray(r.decorative)   ? r.decorative.map(normDecorative) : [];
 
-  const SPRING_OPTIONS: SpringPreset[] = ["bouncy","soft","snappy","instant"];
+  const SPRING_OPTIONS: SpringPreset[] = ["bouncy","crispy","soft","snappy","instant"];
   const PRESET_OPTIONS: MotionPresetName[] = ["snappy_commerce","soft_lifestyle","high_energy","premium_minimal","food_hype"];
 
   const rawMotion = (r.motion as Record<string,unknown>) ?? {};

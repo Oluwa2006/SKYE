@@ -1056,235 +1056,242 @@ export default function UGCPage() {
   const stageCounts = STAGES.reduce((acc, s) => ({ ...acc, [s]: creators.filter(c => c.pipeline_stage === s).length }), {} as Record<string, number>);
   const activeDeals = (stageCounts["Deal Sent"] ?? 0) + (stageCounts["Content Live"] ?? 0);
 
-  const displayed = stageFilter === "all" ? creators : creators.filter(c => c.pipeline_stage === stageFilter);
+  const [search, setSearch] = useState("");
+  const [menuOpen, setMenuOpen] = useState<string | null>(null);
+
+  const platforms = [...new Set(creators.map(c => c.platform))];
+
+  const displayed = creators.filter(c => {
+    const matchStage    = stageFilter === "all" || c.pipeline_stage === stageFilter;
+    const matchSearch   = !search || c.handle.toLowerCase().includes(search.toLowerCase()) || (c.name ?? "").toLowerCase().includes(search.toLowerCase());
+    return matchStage && matchSearch;
+  });
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden glass-sub/50">
+    <div className="flex h-screen overflow-hidden" style={{ background:"#f0f2f4" }}>
 
-      {/* ── Top bar ─────────────────────────────────────────────────────── */}
-      <div className="px-8 pt-6 pb-4 shrink-0">
-        <div className="flex items-center justify-between gap-4">
-          {/* Title + inline stats */}
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold text-dh tracking-tight">UGC Creators</h1>
-            <div className="flex items-center gap-3 text-xs text-dm">
-              <span><span className="font-semibold text-dp">{creators.length}</span> total</span>
-              <span className="w-px h-3 bg-gray-200" />
-              <span><span className="font-semibold text-dp">{(stageCounts["Contacted"] ?? 0) + (stageCounts["Responded"] ?? 0)}</span> contacted</span>
-              <span className="w-px h-3 bg-gray-200" />
-              <span><span className="font-semibold text-dp">{activeDeals}</span> active deals</span>
-              <span className="w-px h-3 bg-gray-200" />
-              <span><span className="font-semibold text-dp">{stageCounts["Content Live"] ?? 0}</span> live</span>
-            </div>
-          </div>
+      {/* ── Left sidebar ── */}
+      <aside className="w-52 bg-white border-r border-gray-200 flex flex-col shrink-0 pt-14">
 
-          {/* Actions */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowAIDiscover(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-violet-200 bg-violet-50 text-violet-600 text-xs font-semibold hover:bg-violet-100 transition"
-            >
-              <Sparkles size={13} strokeWidth={1.8} />
-              Find with AI
-            </button>
-            <button
-              onClick={() => setShowDiscover(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-glass glass-card text-ds text-xs font-semibold hover:glass-sub transition"
-            >
-              <Search size={13} strokeWidth={1.8} />
-              Look up Handle
-            </button>
-            <button
-              onClick={() => setShowAdd(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-900 text-white text-xs font-semibold hover:bg-gray-700 transition"
-            >
-              <Plus size={13} strokeWidth={2} />
-              Add Creator
-            </button>
+        {/* Add Creator */}
+        <div className="px-3 pb-4 space-y-1">
+          <button onClick={() => setShowAdd(true)}
+            className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-100 transition-colors">
+            <Plus size={14} strokeWidth={2} className="text-gray-500" /> Add Creator
+          </button>
+          <button onClick={() => setShowDiscover(true)}
+            className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-100 transition-colors">
+            <Search size={13} strokeWidth={1.8} className="text-gray-500" /> Look up Handle
+          </button>
+          <button onClick={() => setShowAIDiscover(true)}
+            className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-semibold text-violet-600 hover:bg-violet-50 transition-colors">
+            <Sparkles size={13} strokeWidth={1.8} /> Find with AI
+          </button>
+        </div>
+
+        <div className="mx-3 h-px bg-gray-100 mb-3" />
+
+        {/* Search */}
+        <div className="px-3 mb-4">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 text-xs">
+            <Search size={12} className="text-gray-400 shrink-0" />
+            <input value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Search creators…"
+              className="bg-transparent flex-1 outline-none text-gray-700 placeholder:text-gray-400" />
           </div>
         </div>
 
-        {/* Stage filter pills */}
-        <div className="flex gap-1.5 mt-4 flex-wrap">
-          <button
-            onClick={() => setStageFilter("all")}
-            className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${stageFilter === "all" ? "bg-gray-900 text-white" : "glass-card border border-glass text-ds hover:text-dp"}`}
-          >
-            All <span className="opacity-60 ml-0.5">{creators.length}</span>
+        {/* Pipeline stages */}
+        <p className="px-4 text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Pipeline</p>
+        <nav className="px-2 space-y-0.5 mb-4">
+          <button onClick={() => setStageFilter("all")}
+            className={`flex items-center justify-between w-full px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${stageFilter === "all" ? "bg-gray-900 text-white" : "text-gray-600 hover:bg-gray-100"}`}>
+            <span>All creators</span>
+            <span className="text-[10px] opacity-60">{creators.length}</span>
           </button>
           {STAGES.map(s => {
-            const count = stageCounts[s] ?? 0;
-            const c = STAGE_COLORS[s];
+            const count  = stageCounts[s] ?? 0;
             const active = stageFilter === s;
             return (
-              <button
-                key={s}
-                onClick={() => setStageFilter(s)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${active ? "bg-gray-900 text-white" : "glass-card border border-glass text-ds hover:text-dp"}`}
-              >
-                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: active ? "#fff" : c.dot }} />
-                {s}
-                {count > 0 && <span className="opacity-60">{count}</span>}
+              <button key={s} onClick={() => setStageFilter(s)}
+                className={`flex items-center justify-between w-full px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${active ? "bg-gray-900 text-white" : "text-gray-600 hover:bg-gray-100"}`}>
+                <span className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full shrink-0"
+                    style={{ background: active ? "#fff" : STAGE_COLORS[s].dot }} />
+                  {s}
+                </span>
+                {count > 0 && <span className="text-[10px] opacity-60">{count}</span>}
               </button>
             );
           })}
-        </div>
-      </div>
+        </nav>
 
-      {/* ── Table ───────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto px-8 pb-6 min-h-0">
-        {loading ? (
-          <div className="space-y-2">
-            {[1,2,3,4,5].map(i => (
-              <div key={i} className="h-14 glass-card rounded-xl animate-pulse" />
-            ))}
-          </div>
-        ) : creators.length === 0 ? (
-          <div className="glass-card rounded-xl px-6 py-20 text-center">
-            <div className="w-12 h-12 rounded-xl glass-sub border border-glass flex items-center justify-center mx-auto mb-4">
-              <Users size={20} strokeWidth={1.6} className="text-dm" />
-            </div>
-            <p className="text-sm font-semibold text-dp mb-1">No creators yet</p>
-            <p className="text-xs text-dm mb-4">Add a UGC creator to start tracking your partnership pipeline.</p>
-            <div className="flex items-center gap-2 justify-center">
-              <button
-                onClick={() => setShowAIDiscover(true)}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-violet-200 bg-violet-50 text-violet-600 text-xs font-semibold hover:bg-violet-100 transition"
-              >
-                <Sparkles size={12} /> Find with AI
-              </button>
-              <button
-                onClick={() => setShowAdd(true)}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gray-900 text-white text-xs font-semibold hover:bg-gray-700 transition"
-              >
-                <Plus size={12} /> Add manually
-              </button>
-            </div>
-          </div>
-        ) : displayed.length === 0 ? (
-          <div className="glass-card rounded-xl px-6 py-10 text-center">
-            <p className="text-sm text-dm">No creators in <span className="font-semibold text-dp">{stageFilter}</span></p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-            {displayed.map(c => (
-              <div
-                key={c.id}
-                className="glass-card rounded-xl p-4 hover:shadow-md hover:border-glass transition-all cursor-pointer"
-                onClick={() => router.push(`/dashboard/ugc/${c.id}`)}
-              >
-                {/* Top row: avatar + name + menu */}
-                <div className="flex items-start gap-3">
-                  <Avatar creator={c} size={40} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <p className="text-sm font-semibold text-dh truncate">@{c.handle}</p>
-                      {c.brand_fit_score > 0 && (
-                        <span className="flex items-center gap-0.5 text-[10px] font-bold text-amber-500 shrink-0">
-                          <Star size={9} className="fill-amber-400 text-amber-400" />
-                          {c.brand_fit_score}
-                        </span>
-                      )}
-                    </div>
-                    {c.name && c.name !== c.handle && (
-                      <p className="text-[11px] text-dm truncate">{c.name}</p>
-                    )}
-                  </div>
-                  {/* Stage dropdown */}
-                  <div onClick={e => e.stopPropagation()}>
-                    <select
-                      value={c.pipeline_stage}
-                      onChange={e => handleStageChange(c.id, e.target.value as PipelineStage)}
-                      className={`text-[10px] font-semibold rounded-lg px-2 py-1 border-0 outline-none cursor-pointer shrink-0 ${STAGE_COLORS[c.pipeline_stage].bg} ${STAGE_COLORS[c.pipeline_stage].text}`}
-                    >
-                      {STAGES.map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                  </div>
+        {/* Platforms */}
+        {platforms.length > 0 && (
+          <>
+            <p className="px-4 text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Platforms</p>
+            <nav className="px-2 space-y-0.5">
+              {platforms.map(p => (
+                <div key={p} className="flex items-center justify-between px-3 py-1.5 text-xs text-gray-600">
+                  <span className="capitalize">{p}</span>
+                  <span className="text-[10px] text-gray-400">{creators.filter(c => c.platform === p).length}</span>
                 </div>
-
-                {/* Stats row */}
-                <div className="mt-3 flex items-center gap-3 text-[11px] text-ds">
-                  <span className="flex items-center gap-1">
-                    <Users size={11} className="text-dm" />
-                    <span className="font-semibold text-dp">{fmt(c.followers)}</span>
-                  </span>
-                  {c.engagement_rate > 0 && (
-                    <span className="flex items-center gap-1">
-                      <TrendingUp size={11} className="text-dm" />
-                      {c.engagement_rate}%
-                    </span>
-                  )}
-                  {c.est_cost_min > 0 && (
-                    <span className="flex items-center gap-1">
-                      <DollarSign size={11} className="text-dm" />
-                      {fmt(c.est_cost_min)}–{fmt(c.est_cost_max)}
-                    </span>
-                  )}
-                </div>
-
-                {/* Niche tags */}
-                {c.niche_tags.length > 0 && (
-                  <div className="mt-2 flex gap-1 flex-wrap">
-                    {c.niche_tags.slice(0, 3).map(tag => (
-                      <span key={tag} className="text-[9px] glass-sub border border-glass text-ds px-1.5 py-0.5 rounded font-medium">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {/* Footer */}
-                <div
-                  className="mt-3 pt-3 border-t border-glass-soft flex items-center justify-between"
-                  onClick={e => e.stopPropagation()}
-                >
-                  <button
-                    onClick={() => setDmCreator(c)}
-                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white text-[10px] font-semibold hover:opacity-90 transition"
-                  >
-                    <Instagram size={10} /> DM
-                  </button>
-                  <div className="flex items-center gap-2">
-                    <p className="text-[10px] text-dm">
-                      {daysAgo(c.last_updated) === 0 ? "today" : `${daysAgo(c.last_updated)}d ago`}
-                    </p>
-                    <button
-                      onClick={() => router.push(`/dashboard/ugc/${c.id}`)}
-                      className="text-[11px] text-dm hover:text-dp font-medium flex items-center gap-0.5 transition"
-                    >
-                      See details <ChevronRight size={11} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            {/* Add new card */}
-            <button
-              onClick={() => setShowAdd(true)}
-              className="glass-card rounded-xl border border-dashed border-glass p-4 flex flex-col items-center justify-center gap-2 text-dm hover:border-gray-400 hover:text-ds transition-all min-h-[140px]"
-            >
-              <Plus size={20} strokeWidth={1.5} />
-              <span className="text-xs font-medium">Add Creator</span>
-            </button>
-          </div>
+              ))}
+            </nav>
+          </>
         )}
+      </aside>
+
+      {/* ── Main content ── */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+
+        {/* Top bar */}
+        <div className="flex items-center justify-between px-6 py-3.5 bg-white border-b border-gray-200 shrink-0">
+          <div className="flex items-center gap-3">
+            <h1 className="text-sm font-bold text-gray-900">
+              {stageFilter === "all" ? "UGC Creators" : stageFilter}
+            </h1>
+            <span className="text-[10px] text-gray-400 font-medium">
+              {displayed.length} {displayed.length === 1 ? "creator" : "creators"}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-gray-400">Sort by</span>
+            <span className="text-[11px] font-semibold text-gray-700 cursor-pointer">Followers ▾</span>
+          </div>
+        </div>
+
+        {/* Grid */}
+        <div className="flex-1 overflow-y-auto p-5">
+          {loading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+              {[1,2,3,4,5,6,7,8].map(i => (
+                <div key={i} className="bg-white rounded-xl overflow-hidden border border-gray-200 animate-pulse">
+                  <div className="bg-gray-200" style={{ aspectRatio:"4/3" }} />
+                  <div className="p-2.5 space-y-1.5">
+                    <div className="h-2.5 bg-gray-200 rounded w-3/4" />
+                    <div className="h-2 bg-gray-100 rounded w-1/2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : displayed.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-24 gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center">
+                <Users size={22} strokeWidth={1.5} className="text-gray-400" />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-semibold text-gray-700 mb-1">No creators yet</p>
+                <p className="text-xs text-gray-400">Add creators manually or use AI to find them.</p>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => setShowAIDiscover(true)}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-violet-200 bg-violet-50 text-violet-600 text-xs font-semibold hover:bg-violet-100 transition">
+                  <Sparkles size={12} /> Find with AI
+                </button>
+                <button onClick={() => setShowAdd(true)}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gray-900 text-white text-xs font-semibold hover:bg-gray-700 transition">
+                  <Plus size={12} /> Add Creator
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+              {displayed.map(c => {
+                const platformColor = PLATFORM_COLOR[c.platform] ?? "#6b7280";
+                const stageCol = STAGE_COLORS[c.pipeline_stage];
+                return (
+                  <div key={c.id}
+                    className="bg-white rounded-xl overflow-hidden border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all cursor-pointer group"
+                    onClick={() => router.push(`/dashboard/ugc/${c.id}`)}>
+
+                    {/* Thumbnail */}
+                    <div className="relative overflow-hidden" style={{ aspectRatio:"4/3", background:`linear-gradient(135deg,${platformColor}22,${platformColor}44)` }}>
+                      <Avatar creator={c} size={64} />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Avatar creator={c} size={56} />
+                      </div>
+
+                      {/* Stage badge top-right */}
+                      <div className="absolute top-2 right-2" onClick={e => e.stopPropagation()}>
+                        <select value={c.pipeline_stage}
+                          onChange={e => handleStageChange(c.id, e.target.value as PipelineStage)}
+                          className="text-[9px] font-bold rounded-full px-2 py-0.5 border-0 outline-none cursor-pointer"
+                          style={{ background:`${stageCol.dot}22`, color:stageCol.dot }}>
+                          {STAGES.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                      </div>
+
+                      {/* Followers bottom-left */}
+                      <div className="absolute bottom-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-full"
+                        style={{ background:"rgba(0,0,0,0.5)", backdropFilter:"blur(4px)" }}>
+                        <Users size={9} className="text-white/80" />
+                        <span className="text-[9px] font-bold text-white">{fmt(c.followers)}</span>
+                      </div>
+
+                      {/* DM button on hover */}
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        style={{ background:"rgba(0,0,0,0.18)" }}
+                        onClick={e => { e.stopPropagation(); setDmCreator(c); }}>
+                        <div className="px-3 py-1.5 rounded-full text-[10px] font-bold text-white flex items-center gap-1.5"
+                          style={{ background:"rgba(168,85,247,0.9)", backdropFilter:"blur(6px)" }}>
+                          <Instagram size={11} /> DM
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="p-2.5 flex items-start justify-between gap-1">
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-bold text-gray-900 truncate">@{c.handle}</p>
+                        <p className="text-[10px] text-gray-400 truncate capitalize">
+                          {c.platform}{c.engagement_rate > 0 ? ` · ${c.engagement_rate}%` : ""}
+                        </p>
+                      </div>
+                      <div className="relative shrink-0" onClick={e => e.stopPropagation()}>
+                        <button onClick={() => setMenuOpen(menuOpen === c.id ? null : c.id)}
+                          className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded">
+                          <span className="text-xs leading-none">···</span>
+                        </button>
+                        {menuOpen === c.id && (
+                          <div className="absolute right-0 top-6 bg-white border border-gray-200 rounded-xl shadow-lg z-10 py-1 w-36">
+                            <button onClick={() => { router.push(`/dashboard/ugc/${c.id}`); setMenuOpen(null); }}
+                              className="flex items-center gap-2 w-full px-3 py-2 text-[11px] text-gray-700 hover:bg-gray-50">
+                              <ExternalLink size={11} /> View details
+                            </button>
+                            <button onClick={() => { setDmCreator(c); setMenuOpen(null); }}
+                              className="flex items-center gap-2 w-full px-3 py-2 text-[11px] text-gray-700 hover:bg-gray-50">
+                              <Instagram size={11} /> Send DM
+                            </button>
+                            <div className="mx-2 my-1 h-px bg-gray-100" />
+                            <button onClick={() => { handleDelete(c.id); setMenuOpen(null); }}
+                              className="flex items-center gap-2 w-full px-3 py-2 text-[11px] text-red-500 hover:bg-red-50">
+                              <X size={11} /> Remove
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Add card */}
+              <button onClick={() => setShowAdd(true)}
+                className="bg-white rounded-xl border-2 border-dashed border-gray-200 hover:border-gray-400 flex flex-col items-center justify-center gap-2 text-gray-400 hover:text-gray-600 transition-all"
+                style={{ aspectRatio:"4/3" }}>
+                <Plus size={20} strokeWidth={1.5} />
+                <span className="text-[10px] font-medium">Add Creator</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {dmCreator && <DMOutreachPanel creator={dmCreator} onClose={() => setDmCreator(null)} />}
       {showAdd && <AddCreatorModal onClose={() => setShowAdd(false)} onSave={handleAdd} />}
-      {showDiscover && (
-        <DiscoveryPanel
-          onClose={() => setShowDiscover(false)}
-          onAdd={handleDiscoverAdd}
-        />
-      )}
-      {showAIDiscover && (
-        <AIDiscoveryPanel
-          onClose={() => setShowAIDiscover(false)}
-          onAdd={handleDiscoverAdd}
-        />
-      )}
+      {showDiscover && <DiscoveryPanel onClose={() => setShowDiscover(false)} onAdd={handleDiscoverAdd} />}
+      {showAIDiscover && <AIDiscoveryPanel onClose={() => setShowAIDiscover(false)} onAdd={handleDiscoverAdd} />}
     </div>
   );
 }

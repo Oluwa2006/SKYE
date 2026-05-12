@@ -160,51 +160,116 @@ const Background: React.FC<{ layer: BackgroundLayer }> = ({ layer }) => {
   return <AbsoluteFill style={{ background: "#111111" }} />;
 };
 
-// ── Smart product placeholder ──────────────────────────────────────────────────
-// Shown when image_url is empty (template preview / admin mode).
-// Renders an animated silhouette that matches the expected product shape.
-const ProductPlaceholder: React.FC<{ layer: ProductLayer; frame: number; fps: number }> = ({ layer, frame, fps }) => {
-  // Derive shape from background_shape hint or fall back to aspect ratio
-  const bg = layer.background_shape;
-  const isCircle = bg?.type === "circle";
-  const isLandscape = layer.width_pct > layer.height_pct * 1.4;
-  const isPortrait   = layer.height_pct > layer.width_pct * 1.2;
+// ── Unified slot placeholder system ───────────────────────────────────────────
+// Each slot type has its own accent colour, icon, and label so admins can see
+// at a glance exactly what asset needs to be dropped in at each position.
 
-  const borderRadius = isCircle       ? "50%"
-                     : isLandscape    ? "14px"
-                     : isPortrait     ? "18px"
-                     : "20px"; // square/generic
+type SlotType = "product" | "logo" | "slogan" | "background" | "custom";
 
-  // Slow breathing pulse — 2s cycle
-  const breathe   = Math.sin((frame / fps) * Math.PI) * 0.018;
-  const pulseScale = 1 + breathe;
+interface SlotConfig {
+  accent:  string;
+  label:   string;
+  icon:    React.ReactNode;
+}
 
-  // Shimmer sweep across the silhouette
-  const shimmerX = ((frame / fps) % 2) / 2; // 0→1 over 2s, loops
+const SLOT_ICONS: Record<SlotType, React.ReactNode> = {
+  product: (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+        stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <circle cx="12" cy="13" r="4" stroke="currentColor" strokeWidth="1.5"/>
+    </svg>
+  ),
+  logo: (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+      <rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M7 17L10.5 10L14 15L16.5 12L19 17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
+    </svg>
+  ),
+  slogan: (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+      <path d="M4 7h16M4 12h10M4 17h13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  ),
+  background: (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+      <rect x="2" y="2" width="20" height="20" rx="3" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M2 12h20M12 2v20" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3"/>
+    </svg>
+  ),
+  custom: (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M12 8v4M12 16h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  ),
+};
 
-  // Color: pull from drop_shadow_color or neutral
-  const accent = layer.drop_shadow_color ?? layer.ambient_glow_color ?? "#a0b4cc";
+const SLOT_CONFIGS: Record<SlotType, SlotConfig> = {
+  product:    { accent: "#60a5fa", label: "Add Product Image",  icon: SLOT_ICONS.product },
+  logo:       { accent: "#a78bfa", label: "Add Your Logo",      icon: SLOT_ICONS.logo },
+  slogan:     { accent: "#34d399", label: "Add Slogan / Text",  icon: SLOT_ICONS.slogan },
+  background: { accent: "#f59e0b", label: "Add Background",     icon: SLOT_ICONS.background },
+  custom:     { accent: "#94a3b8", label: "Add Asset",          icon: SLOT_ICONS.custom },
+};
+
+const SlotPlaceholder: React.FC<{
+  type:         SlotType;
+  label?:       string;         // override default label
+  borderRadius?: string;
+  frame:        number;
+  fps:          number;
+  width?:       string;
+  height?:      string;
+}> = ({ type, label, borderRadius = "16px", frame, fps, width = "100%", height = "100%" }) => {
+  const cfg    = SLOT_CONFIGS[type];
+  const accent = cfg.accent;
+  const text   = label ?? cfg.label;
+
+  // Breathing pulse
+  const pulse    = 1 + Math.sin((frame / fps) * Math.PI) * 0.015;
+  // Shimmer sweep
+  const shimmerX = ((frame / fps) % 2.5) / 2.5;
 
   return (
-    <div
-      style={{
-        width: "100%", height: "100%",
-        borderRadius,
-        overflow: "hidden",
-        transform: `scale(${pulseScale})`,
-        transformOrigin: "center center",
-        position: "relative",
-        background: `linear-gradient(135deg, ${accent}22 0%, ${accent}44 50%, ${accent}22 100%)`,
-        border: `1.5px solid ${accent}55`,
-      }}
-    >
-      {/* Shimmer band */}
+    <div style={{
+      width, height,
+      borderRadius,
+      overflow:        "hidden",
+      position:        "relative",
+      transform:       `scale(${pulse})`,
+      transformOrigin: "center center",
+      background:      `linear-gradient(135deg, ${accent}18 0%, ${accent}38 50%, ${accent}18 100%)`,
+      border:          `1.5px dashed ${accent}77`,
+      boxSizing:       "border-box",
+    }}>
+      {/* Shimmer */}
       <div style={{
-        position:    "absolute",
-        inset:       0,
-        background:  `linear-gradient(105deg, transparent ${shimmerX * 80}%, rgba(255,255,255,0.18) ${shimmerX * 80 + 15}%, transparent ${shimmerX * 80 + 30}%)`,
+        position:  "absolute",
+        inset:     0,
+        background: `linear-gradient(105deg, transparent ${shimmerX * 78}%, rgba(255,255,255,0.14) ${shimmerX * 78 + 14}%, transparent ${shimmerX * 78 + 28}%)`,
         pointerEvents: "none",
       }} />
+
+      {/* Type badge — top left corner */}
+      <div style={{
+        position:     "absolute",
+        top:          8,
+        left:         8,
+        background:   `${accent}33`,
+        border:       `1px solid ${accent}55`,
+        borderRadius: 6,
+        padding:      "2px 7px",
+        fontSize:     9,
+        fontFamily:   "sans-serif",
+        fontWeight:   700,
+        letterSpacing: "0.1em",
+        textTransform: "uppercase",
+        color:        accent,
+      }}>
+        {type}
+      </div>
 
       {/* Icon + label */}
       <div style={{
@@ -214,27 +279,54 @@ const ProductPlaceholder: React.FC<{ layer: ProductLayer; frame: number; fps: nu
         flexDirection:  "column",
         alignItems:     "center",
         justifyContent: "center",
-        gap:            "8px",
-        padding:        "12px",
+        gap:            10,
+        padding:        16,
+        color:          accent,
       }}>
-        {/* Camera icon (SVG — no external import needed) */}
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style={{ opacity: 0.45 }}>
-          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          <circle cx="12" cy="13" r="4" stroke="white" strokeWidth="1.5"/>
-        </svg>
+        <div style={{ opacity: 0.7 }}>{cfg.icon}</div>
         <span style={{
-          color:       "rgba(255,255,255,0.55)",
-          fontSize:    11,
-          fontFamily:  "sans-serif",
-          fontWeight:  600,
-          textAlign:   "center",
-          letterSpacing: "0.04em",
+          color:         accent,
+          fontSize:      10,
+          fontFamily:    "sans-serif",
+          fontWeight:    700,
+          textAlign:     "center",
+          letterSpacing: "0.05em",
           textTransform: "uppercase",
+          lineHeight:    1.3,
         }}>
-          Drop product here
+          {text}
         </span>
       </div>
     </div>
+  );
+};
+
+// Renders the correct slot placeholder based on what kind of asset the layer expects.
+const ProductPlaceholder: React.FC<{ layer: ProductLayer; frame: number; fps: number }> = ({ layer, frame, fps }) => {
+  const bg = layer.background_shape;
+  const isCircle    = bg?.type === "circle";
+  const isLandscape = layer.width_pct > layer.height_pct * 1.4;
+  const isPortrait  = layer.height_pct > layer.width_pct * 1.2;
+  const borderRadius = isCircle ? "50%" : isLandscape ? "14px" : isPortrait ? "20px" : "18px";
+
+  const slotType: SlotType =
+    layer.slot_type === "logo"      ? "logo"      :
+    layer.slot_type === "lifestyle" ? "custom"     :
+    "product";
+
+  const slotLabel =
+    layer.slot_type === "logo"      ? "Add Your Logo"       :
+    layer.slot_type === "lifestyle" ? "Add Lifestyle Photo"  :
+    "Add Product Image";
+
+  return (
+    <SlotPlaceholder
+      type={slotType}
+      label={slotLabel}
+      borderRadius={borderRadius}
+      frame={frame}
+      fps={fps}
+    />
   );
 };
 
@@ -290,7 +382,7 @@ const ProductRenderer: React.FC<{
     default: break;
   }
 
-  // Visible animation
+  // Visible animation (post-entrance)
   const postEntry = Math.max(0, frame - startFrame - 20);
   if (layer.visible_animation === "float") {
     const floatY = Math.sin((postEntry / fps) * Math.PI * 0.8) * 8;
@@ -301,6 +393,13 @@ const ProductRenderer: React.FC<{
   } else if (layer.visible_animation === "slow_zoom_out") {
     const z = 1.07 - (postEntry / durationInFrames) * 0.07;
     transform += ` scale(${z})`;
+  } else if (layer.visible_animation === "parallax") {
+    // Simulates depth: product drifts upward at 40% of the background scroll rate.
+    // As the ad progresses, the product appears to float at a different depth plane.
+    const progress = frame / Math.max(1, durationInFrames);
+    const parallaxY = interpolate(progress, [0, 1], [0, -28]);
+    const parallaxX = Math.sin((frame / fps) * Math.PI * 0.3) * 4; // subtle lateral drift
+    transform += ` translate(${parallaxX}px, ${parallaxY}px)`;
   }
 
   const SHADOW: Record<string, string> = {
@@ -509,6 +608,32 @@ const TextRenderer: React.FC<{
 
   if (frame < startFrame) return null;
 
+  // Empty content — show a labelled slot placeholder
+  if (!layer.content || layer.content.trim() === "") {
+    const slotType: SlotType =
+      layer.role === "brand"  ? "logo" :
+      layer.role === "hook"   ? "slogan" :
+      layer.role === "cta"    ? "custom" : "slogan";
+    const slotLabel =
+      layer.role === "brand"  ? "Brand Name / Tagline" :
+      layer.role === "hook"   ? "Add Hook Line" :
+      layer.role === "cta"    ? "Add CTA Text" :
+      layer.role === "subtext"? "Add Subtext" : "Add Text";
+    const fontPxEst = (layer.font_size_vw / 100) * frameWidth;
+    return (
+      <div style={{
+        position: "absolute",
+        left:    `${layer.x_pct}%`,
+        top:     `${layer.y_pct}%`,
+        width:   `${layer.width_pct}%`,
+        height:  `${Math.max(fontPxEst * 2.2, 36)}px`,
+        opacity: exitOp,
+      }}>
+        <SlotPlaceholder type={slotType} label={slotLabel} frame={frame} fps={fps} borderRadius="8px" />
+      </div>
+    );
+  }
+
   const fontPx  = (layer.font_size_vw / 100) * frameWidth;
   const staggerFr = layer.stagger_ms != null ? (layer.stagger_ms / 1000) * fps : 4;
 
@@ -675,8 +800,12 @@ const TextRenderer: React.FC<{
   } : {};
 
   // ── line_reveal — special rendering ──────────────────────────────────────
+  // Each newline-separated segment gets its own overflow:hidden clip and
+  // staggered spring so multi-line text reveals line by line.
   if (isLineReveal) {
-    const lineY = interpolate(sp, [0, 1], [105, 0]);
+    const lines = layer.content.split("\n").filter(l => l.trim().length > 0);
+    const LINE_STAGGER_SEC = 0.12;
+
     return (
       <div style={{
         position:        "absolute",
@@ -687,14 +816,29 @@ const TextRenderer: React.FC<{
         transform:       exitTx,
         transformOrigin: "center center",
         ...loopStyle,
-        overflow:        "hidden",
-        paddingBottom:   "0.12em", // prevent descender clip
       }}>
-        <div style={{ transform: `translateY(${lineY}%)` }}>
-          <div style={bgStyle}>
-            <span style={baseStyle}>{layer.content}</span>
-          </div>
-        </div>
+        {lines.map((line, i) => {
+          const lineSec   = layer.entrance_start_sec + i * LINE_STAGGER_SEC;
+          const lineSp    = spring({ fps, frame: Math.max(0, frame - Math.round(lineSec * fps)), config: SPRING_PRESETS[preset] });
+          const lineY     = interpolate(lineSp, [0, 1], [110, 0]);
+          const lineOp    = interpolate(lineSp, [0, 0.15, 1], [0, 1, 1]);
+          return (
+            <div
+              key={i}
+              style={{
+                overflow:      "hidden",
+                paddingBottom: "0.1em",
+                marginBottom:  i < lines.length - 1 ? `${LINE_HEIGHT_MAP[layer.line_height] * 0.1}em` : 0,
+              }}
+            >
+              <div style={{ transform: `translateY(${lineY}%)`, opacity: lineOp }}>
+                <div style={bgStyle}>
+                  <span style={{ ...baseStyle, display: "block" }}>{line}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     );
   }
@@ -715,7 +859,24 @@ const TextRenderer: React.FC<{
       }}
     >
       <div style={bgStyle}>
-        {innerNode ?? <span style={baseStyle}>{layer.content}</span>}
+        {innerNode
+          ? (
+            // word_by_word / char_by_char — needs flex-wrap so characters flow
+            // inline properly instead of collapsing to a single point
+            <div style={{
+              display:   "flex",
+              flexWrap:  "wrap",
+              alignItems: "baseline",
+              textAlign: layer.text_align,
+              justifyContent:
+                layer.text_align === "center" ? "center" :
+                layer.text_align === "right"  ? "flex-end" : "flex-start",
+            }}>
+              {innerNode}
+            </div>
+          )
+          : <span style={baseStyle}>{layer.content}</span>
+        }
       </div>
     </div>
   );
@@ -892,7 +1053,23 @@ const LogoRenderer: React.FC<{ layer: LogoLayer }> = ({ layer }) => {
   const startFrame = Math.round(layer.entrance_start_sec * fps);
   const exitOp     = calcExitOp(frame, fps, layer.exit_start_sec);
 
-  if (frame < startFrame || !layer.image_url) return null;
+  if (frame < startFrame) return null;
+
+  // No image yet — show logo placeholder
+  if (!layer.image_url) {
+    return (
+      <div style={{
+        position: "absolute",
+        left:   `${layer.x_pct}%`,
+        top:    `${layer.y_pct}%`,
+        width:  `${layer.width_pct}%`,
+        height: `${layer.height_pct}%`,
+        opacity: layer.opacity,
+      }}>
+        <SlotPlaceholder type="logo" frame={frame} fps={fps} borderRadius="10px" />
+      </div>
+    );
+  }
 
   const sp = spring({ fps, frame: Math.max(0, frame - startFrame), config: SPRING_PRESETS.soft });
 
@@ -932,25 +1109,55 @@ const LogoRenderer: React.FC<{ layer: LogoLayer }> = ({ layer }) => {
   );
 };
 
+// ── Beat scale helper ─────────────────────────────────────────────────────────
+// Returns a scale multiplier that pops to 1.055 at each beat timestamp and
+// springs back to 1.0. Keeps the whole composition feeling music-driven.
+function calcBeatScale(frame: number, fps: number, beatSecArr: number[]): number {
+  if (!beatSecArr.length) return 1;
+  let scale = 1;
+  for (const sec of beatSecArr) {
+    const beatFrame = Math.round(sec * fps);
+    if (frame < beatFrame) continue;
+    const elapsed  = frame - beatFrame;
+    const beatSp   = spring({ fps, frame: elapsed, config: SPRING_PRESETS.bouncy });
+    // Pop up then spring back — net effect: a quick scale pulse at each beat
+    const pulse = interpolate(beatSp, [0, 0.35, 1], [1.055, 1.055, 1], { extrapolateRight: "clamp" });
+    // Use the strongest pulse if multiple beats are close together
+    if (pulse > scale) scale = pulse;
+  }
+  return scale;
+}
+
 // ── Root ───────────────────────────────────────────────────────────────────────
 export const AdMeta: React.FC<AdMetaProps> = ({ schema }) => {
-  const { width } = useVideoConfig();
+  const frame        = useCurrentFrame();
+  const { width, fps } = useVideoConfig();
 
   if (!schema) return <AbsoluteFill style={{ background: "#000" }} />;
 
   const globalPreset: SpringPreset = schema.motion?.spring_preset ?? "soft";
   const overrides = schema.motion?.layer_spring_overrides ?? {};
+  const beatMoments = schema.audio?.beat_moments_sec ?? [];
 
   const products   = schema.products    ?? [];
   const texts      = schema.text_layers ?? [];
   const decorative = schema.decorative  ?? [];
+
+  // Beat scale — applied to the whole composition so every element reacts together
+  const beatScale = calcBeatScale(frame, fps, beatMoments);
 
   // Split products by z-layer
   const bgProducts = products.filter(p => p.z_layer === "behind_all_text");
   const fgProducts = products.filter(p => p.z_layer !== "behind_all_text");
 
   return (
-    <AbsoluteFill style={{ overflow: "hidden" }}>
+    <AbsoluteFill
+      style={{
+        overflow:        "hidden",
+        transform:       beatScale !== 1 ? `scale(${beatScale})` : undefined,
+        transformOrigin: "center center",
+      }}
+    >
       {/* 1 ── Background */}
       <Background layer={schema.background} />
 

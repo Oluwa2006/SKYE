@@ -11,10 +11,11 @@ export type AdSchemaVersion = "1";
 // ─── Motion ───────────────────────────────────────────────────────────────────
 
 export type SpringPreset =
-  | "bouncy"   // damping 10,  stiffness 120 — exaggerated overshoot
-  | "soft"     // damping 18,  stiffness 160 — gentle settle
-  | "snappy"   // damping 22,  stiffness 260 — fast, minimal bounce
-  | "instant"; // damping 100, stiffness 500 — near-immediate
+  | "bouncy"   // damping  8,  stiffness 280 — slams in, wobbles back hard
+  | "crispy"   // damping 14,  stiffness 380 — fast arrival, sharp snap, slight overshoot
+  | "soft"     // damping 18,  stiffness 160 — gentle settle, lifestyle feel
+  | "snappy"   // damping 22,  stiffness 260 — decisive, minimal bounce
+  | "instant"; // damping 100, stiffness 500 — near-immediate, no spring
 
 export type MotionPresetName =
   | "snappy_commerce"
@@ -147,6 +148,12 @@ export type ProductLayer = {
   background_shape?: ProductBackgroundShape;
 
   z_layer: "behind_all_text" | "between_text" | "front";
+
+  // What kind of asset this slot expects from the consumer.
+  // "product"   — physical product photo (bottle, shoe, food, device, etc.)
+  // "logo"      — brand mark, icon, wordmark, app icon — 2D flat graphic
+  // "lifestyle" — person, scene, context shot — not the product itself
+  slot_type?: "product" | "logo" | "lifestyle";
 
   // populated by the consumer at render time
   image_url: string;
@@ -347,7 +354,8 @@ export type AdSchema = {
 // ─── Lookup maps (used by AdMeta at render time) ──────────────────────────────
 
 export const SPRING_PRESETS: Record<SpringPreset, { damping: number; stiffness: number }> = {
-  bouncy:  { damping: 10,  stiffness: 120 },
+  bouncy:  { damping:  8,  stiffness: 280 },
+  crispy:  { damping: 14,  stiffness: 380 },
   soft:    { damping: 18,  stiffness: 160 },
   snappy:  { damping: 22,  stiffness: 260 },
   instant: { damping: 100, stiffness: 500 },

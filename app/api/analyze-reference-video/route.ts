@@ -25,20 +25,77 @@ FRAME DIMENSIONS FOR POSITION CALIBRATION:
   9:16 → 1080 × 1920 px  |  16:9 → 1920 × 1080 px  |  1:1 → 1080 × 1080 px
 
 FONT SIZE TABLE  (font_size_vw = observed_px ÷ frame_width × 100):
-  Very large hook  ~90px on 1080w = 8.3    Large hook ~72px = 6.7
-  Medium subtext   ~42px          = 3.9    Small subtext ~32px = 3.0
-  CTA text         ~28px          = 2.6    Brand/label ~24px = 2.2
+  Massive display  ~120px on 1080w = 11.1   Very large hook  ~90px = 8.3
+  Large hook       ~72px           = 6.7    Medium hook      ~56px = 5.2
+  Large subtext    ~48px           = 4.4    Medium subtext   ~42px = 3.9
+  Small subtext    ~36px           = 3.3    Fine subtext     ~28px = 2.6
+  CTA text         ~32px           = 3.0    Small CTA        ~24px = 2.2
+  Brand/label      ~22px           = 2.0    Micro label      ~18px = 1.7
+
+LETTER SPACING CALIBRATION:
+  Tight tracking (compressed):    letter_spacing = "tight"      (-0.04em — headlines squeezed together)
+  Normal tracking:                letter_spacing = "normal"     (0em — default body text)
+  Open tracking (airy):           letter_spacing = "wide"       (0.08em — lifestyle, clean premium)
+  Very open (display/spaced out): letter_spacing = "very_wide"  (0.18em — luxury, all-caps labels)
+
+COLOUR EXTRACTION GUIDE:
+  Sample the EXACT dominant hex from each region of the frame — do not approximate.
+  Background: sample from a flat area away from overlays.
+  Text: sample from the brightest/most saturated pixel of the text itself.
+  Decorative: sample the fill colour of each shape/line/glow.
+  Overlays: if a dark scrim sits over a background, measure its colour and opacity separately.
+  Gradients: sample start and end points — describe the exact two-colour range.
 
 POSITION TABLE (% of frame):
-  Top strip         y_pct  4–12   Upper-third  y_pct 15–28   Centre     y_pct 38–52
-  Lower-third       y_pct 58–72   Bottom strip y_pct 78–92
-  Centered 80% wide x_pct 10 width_pct 80   Left-aligned x_pct 6   Right-aligned x_pct 8–12
+  Top strip         y_pct  4–10   Upper-third   y_pct 12–28   Centre     y_pct 36–54
+  Lower-third       y_pct 58–72   Bottom strip  y_pct 76–94
+  Full width        x_pct 0  width_pct 100      Centered 80%  x_pct 10 width_pct 80
+  Left-aligned      x_pct 5–8     Right-aligned x_pct 8–14 (measure from left edge)
+  Product centered  x_pct ≈ (100-width_pct)/2  — always calculate, never guess 50
+
+DECORATIVE ELEMENT MANDATORY AUDIT — do this BEFORE filling the decorative array:
+  Scan every frame for ALL of the following. Any you find MUST appear in the decorative array:
+  □ Horizontal / diagonal accent lines (thin bars separating sections or underlining text)
+  □ Background colour washes / colour flood panels (a tinted block behind text or product)
+  □ Glows / soft light halos (any blurred radial light emanating from behind the product or text)
+  □ Circle rings / outline shapes (decorative rings, ovals, geometric outlines)
+  □ Dot / grid patterns (repeating small dots or lines as texture overlays)
+  □ Sweep lines (diagonal lines crossing the frame during transitions)
+  □ Solid geometric shapes (rectangles, triangles, pill shapes used as design elements)
+  Real ads virtually always have 2–6 decorative elements. If you output an empty decorative array
+  for a real polished ad, you have missed something — rescan every frame.
+
+SLOT TYPE GUIDE — set slot_type on every product layer:
+  "product"   — physical object the brand sells: bottle, shoe, food, device, clothing, packaging.
+                The consumer will replace this with a photo of their own product.
+  "logo"      — brand mark, icon, wordmark, app icon, shield, 2D flat graphic representing the brand.
+                The consumer will replace this with their own logo. Use this when the image slot
+                contains a logo, icon, or brand mark — NOT a physical product.
+  "lifestyle" — person, hand, scene, context shot, lifestyle imagery, model, environment.
+                The consumer will replace this with their own lifestyle photo.
+  RULE: If the reference has no physical product and the main visual slot is a logo/brand mark → slot_type = "logo".
+        If the ad is for a service, app, or brand (no product shown) → the hero slot is "logo", not "product".
+
+PRODUCT BACKGROUND SHAPE GUIDE:
+  "circle"       — perfectly round halo/spotlight behind the product (most common)
+  "rounded_rect" — soft-edged rectangle platform (common in e-commerce)
+  "blob"         — organic irregular shape (lifestyle, beauty, food)
+  "rect"         — hard-edged panel, card, or shelf behind the product
+  Use blur_px > 0 when the shape is a soft glowing halo (not a sharp-edged shape).
+  scale: 1.0 = same size as product, 1.2 = 20% larger (standard halo), 1.5 = large spotlight
+
+TEXT SHADOW CALIBRATION:
+  None:                   text_shadow = null
+  Subtle legibility drop: {"offset_x_px": 0, "offset_y_px": 2, "blur_px": 8, "color": "rgba(0,0,0,0.4)"}
+  Strong drop shadow:     {"offset_x_px": 2, "offset_y_px": 4, "blur_px": 14, "color": "rgba(0,0,0,0.6)"}
+  Glow effect:            {"offset_x_px": 0, "offset_y_px": 0, "blur_px": 20, "color": "#brandcolor"}
 
 SPRING PRESET GUIDE (pick the closest):
-  "bouncy"  — exaggerated overshoot, product slams in and wobbles back
-  "soft"    — gentle settle, slight overshoot, lifestyle/elegant feel
-  "snappy"  — fast and decisive, minimal bounce, premium/clean feel
-  "instant" — near-immediate, no spring feel at all, hard cuts
+  "bouncy"  — slams in hard and wobbles back multiple times — hype/food drops
+  "crispy"  — fast arrival with a sharp snap and tiny overshoot — e-commerce, product reveals
+  "soft"    — gentle settle, slight overshoot — lifestyle, elegant, beauty
+  "snappy"  — decisive and controlled, minimal bounce — premium, SaaS, clean
+  "instant" — no spring at all, hard cuts — when the ad just jumps between states
 
 MOTION PRESET GUIDE (pick the ONE that best describes the overall ad personality):
   "snappy_commerce"  — clean product ad, e-commerce, fast decisive feel, product scales in, text punches
@@ -48,17 +105,20 @@ MOTION PRESET GUIDE (pick the ONE that best describes the overall ad personality
   "food_hype"        — restaurant, plating, close-up hero, product bounces in and floats
 
 ENTRANCE ANIMATION GUIDE:
-  Product "slam"       — scale from 0 with heavy overshoot (bouncy spring)
-  Product "scale"      — scale from ~0.7 to 1.0, moderate spring
-  Product "slide_up"   — translates up from below into position
-  Product "slide_right"— translates in from left
-  Product "fade"       — opacity 0 → 1, no movement
-  Text "word_by_word"  — each word appears in sequence with stagger
-  Text "char_by_char"  — each character appears in sequence
-  Text "mask_wipe"     — text revealed left-to-right by a growing clip mask
-  Text "scale_punch"   — text scales from large to normal (impact feel)
-  Text "snap_in"       — text pops to position from slight offset, instant spring
-  Text "fade_up"       — fades in while translating slightly upward
+  Product "slam"        — scale from 0 with heavy overshoot (bouncy spring)
+  Product "scale"       — scale from ~0.7 to 1.0, moderate spring
+  Product "slide_up"    — translates up from below into position
+  Product "slide_right" — translates in from left
+  Product "fade"        — opacity 0 → 1, no movement
+  Text "line_reveal"    — text rises from behind a clipping edge (most common premium entrance)
+  Text "word_by_word"   — each word appears in sequence with stagger
+  Text "char_by_char"   — each character appears in sequence
+  Text "mask_wipe"      — text revealed left-to-right by a growing clip mask
+  Text "scale_punch"    — text scales from large to normal (impact feel)
+  Text "snap_in"        — text pops to position from slight offset, instant spring
+  Text "blur_in"        — starts blurred and sharpens into focus (cinematic/beauty feel)
+  Text "rise"           — slow cinematic lift upward with soft spring (lifestyle/luxury)
+  Text "fade_up"        — fades in while translating slightly upward
 
 Output this exact JSON object. Fill EVERY field. Do not skip or rename any key.
 
@@ -137,6 +197,7 @@ Output this exact JSON object. Fill EVERY field. Do not skip or rename any key.
         }>,
 
         "z_layer": "<'behind_all_text'|'between_text'|'front'>",
+        "slot_type": "<'product'|'logo'|'lifestyle' — use SLOT TYPE GUIDE above>",
         "image_url": ""
       }
       // If multiple products are visible, add an object for each with id "product_2", "product_3" etc.
@@ -169,7 +230,7 @@ Output this exact JSON object. Fill EVERY field. Do not skip or rename any key.
         "text_shadow": <null if no shadow. Or: {"offset_x_px": number, "offset_y_px": number, "blur_px": number, "color": "hex or rgba string"}>,
         "stroke": <null if no stroke. Or: {"width_px": number, "color": "hex"}>,
 
-        "entrance": "<'fade_up'|'fade_in'|'slide_left'|'slide_right'|'word_by_word'|'char_by_char'|'scale_punch'|'snap_in'|'mask_wipe'|'none'>",
+        "entrance": "<'fade_up'|'fade_in'|'rise'|'blur_in'|'line_reveal'|'slide_left'|'slide_right'|'word_by_word'|'char_by_char'|'scale_punch'|'snap_in'|'mask_wipe'|'none'>",
         "entrance_start_sec": <number>,
         "stagger_ms": <number — milliseconds between each word/char for word_by_word or char_by_char. null if not staggered>,
 
@@ -192,8 +253,9 @@ Output this exact JSON object. Fill EVERY field. Do not skip or rename any key.
     ],
 
     "decorative": [
-      // Output one object per decorative element: accent lines, colour floods, rings, glows, dot patterns, sweep lines.
-      // If none exist, output an empty array [].
+      // MANDATORY: complete the DECORATIVE ELEMENT MANDATORY AUDIT above before filling this array.
+      // Output one object per decorative element found. Real polished ads have 2–6 decorative elements.
+      // Types to look for: accent lines, colour flood panels, glows, circle rings, dot patterns, sweep lines, geometric shapes.
       {
         "id": "<unique id — e.g. 'accent_line_1', 'glow_ring', 'color_flood_bottom'>",
         "type": "<'accent_line'|'color_flood'|'circle_ring'|'glow'|'dot_pattern'|'sweep_line'|'shape'>",
@@ -246,7 +308,7 @@ Output this exact JSON object. Fill EVERY field. Do not skip or rename any key.
     },
 
     "motion": {
-      "spring_preset": "<'bouncy'|'soft'|'snappy'|'instant' — the ONE preset that best describes the dominant motion feel of this ad. Use SPRING PRESET GUIDE above>",
+      "spring_preset": "<'bouncy'|'crispy'|'soft'|'snappy'|'instant' — the ONE preset that best describes the dominant motion feel of this ad. Use SPRING PRESET GUIDE above>",
       "overall_pacing": "<'slow_build'|'medium'|'fast_punch'|'whiplash'>",
       "motion_preset": "<'snappy_commerce'|'soft_lifestyle'|'high_energy'|'premium_minimal'|'food_hype' — pick the ONE that best describes the overall ad personality. Use MOTION PRESET GUIDE above>",
       "cut_timestamps_sec": [<list of seconds where a hard cut occurs — scene jumps with no transition. Empty array [] if no hard cuts>],
@@ -333,9 +395,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "GEMINI_API_KEY not configured" }, { status: 500 });
   }
 
-  const formData  = await req.formData();
-  const file      = formData.get("file") as File | null;
-  const videoUrl  = formData.get("video_url") as string | null;
+  const formData          = await req.formData();
+  const file              = formData.get("file") as File | null;
+  const videoUrl          = formData.get("video_url") as string | null;
+  const actualDurationRaw = formData.get("actual_duration_sec") as string | null;
+  const actualDurationSec = actualDurationRaw ? parseFloat(actualDurationRaw) : null;
 
   // ── Accept either a file upload or a direct URL ───────────────────────────
   let mimeType: string;
@@ -384,51 +448,84 @@ export async function POST(req: NextRequest) {
   // Suppress unused warning
   void videoData;
 
-  try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+  // Model cascade: try 2.5-pro first (best quality), fall back to 2.0-flash on 503
+  const MODEL_CASCADE = ["gemini-2.5-pro", "gemini-2.5-flash"];
+  const MAX_RETRIES   = 3;
 
-    const result = await model.generateContent([
-      {
-        inlineData: {
-          mimeType,
-          data: inlineData!,
-        },
-      },
-      { text: ANALYSIS_PROMPT },
-    ]);
+  const parts = [
+    { inlineData: { mimeType, data: inlineData! } },
+    { text: ANALYSIS_PROMPT },
+  ];
 
-    const raw = result.response.text().trim();
+  let lastError = "";
 
-    // Strip markdown fences if Gemini wraps it anyway
-    const cleaned = raw
-      .replace(/^```json\s*/i, "")
-      .replace(/^```\s*/i, "")
-      .replace(/\s*```$/i, "")
-      .trim();
+  for (const modelId of MODEL_CASCADE) {
+    const model = genAI.getGenerativeModel({ model: modelId });
 
-    let parsed: Record<string, unknown>;
-    try {
-      parsed = JSON.parse(cleaned);
-    } catch {
-      return NextResponse.json({ error: "Gemini returned non-JSON output", raw }, { status: 500 });
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const result = await model.generateContent(parts);
+        const raw    = result.response.text().trim();
+
+        const cleaned = raw
+          .replace(/^```json\s*/i, "")
+          .replace(/^```\s*/i, "")
+          .replace(/\s*```$/i, "")
+          .trim();
+
+        let parsed: Record<string, unknown>;
+        try {
+          parsed = JSON.parse(cleaned);
+        } catch {
+          return NextResponse.json({ error: "Gemini returned non-JSON output", raw }, { status: 500 });
+        }
+
+        const isNewShape = "ad_schema" in parsed;
+
+        // Override duration_sec with the browser-measured actual value.
+        // Gemini consistently underestimates video length by 2-5 seconds.
+        let adSchema = isNewShape ? (parsed.ad_schema as Record<string, unknown>) : null;
+        if (adSchema && actualDurationSec && actualDurationSec > 0) {
+          adSchema = { ...adSchema, duration_sec: Math.round(actualDurationSec * 10) / 10 };
+        }
+
+        return NextResponse.json({
+          analysis:               parsed,
+          ad_schema:              adSchema,
+          hero_product:           isNewShape ? parsed.hero_product           : null,
+          remotion_compatibility: isNewShape ? parsed.remotion_compatibility : (parsed.remotion_compatibility ?? null),
+          raw_text:               cleaned,
+          model_used:             modelId,
+        });
+
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        lastError = message;
+
+        const is503 = message.includes("503") || message.toLowerCase().includes("service unavailable") || message.toLowerCase().includes("high demand");
+
+        if (is503) {
+          if (attempt < MAX_RETRIES) {
+            // Exponential backoff: 2s, 4s, 8s
+            await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt)));
+            continue;
+          }
+          // All retries on this model exhausted — try next model in cascade
+          console.warn(`[analyze-reference-video] ${modelId} unavailable after ${MAX_RETRIES} attempts, falling back`);
+          break;
+        }
+
+        // Non-503 error (auth, quota, bad request) — don't retry or cascade
+        console.error("[analyze-reference-video]", message);
+        return NextResponse.json({ error: message }, { status: 500 });
+      }
     }
-
-    // New prompt shape: { ad_schema, hero_product, remotion_compatibility }
-    // Legacy shape: { overview, background, ... } — pass through as-is for backwards compat
-    const isNewShape = "ad_schema" in parsed;
-
-    return NextResponse.json({
-      analysis: parsed,
-      // Convenience top-level keys so the dashboard can read them without drilling in
-      ad_schema:              isNewShape ? parsed.ad_schema              : null,
-      hero_product:           isNewShape ? parsed.hero_product           : null,
-      remotion_compatibility: isNewShape ? parsed.remotion_compatibility : (parsed.remotion_compatibility ?? null),
-      raw_text: cleaned,
-    });
-
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Gemini analysis failed";
-    console.error("[analyze-reference-video]", message);
-    return NextResponse.json({ error: message }, { status: 500 });
   }
+
+  // All models exhausted
+  console.error("[analyze-reference-video] all models failed:", lastError);
+  return NextResponse.json(
+    { error: "Gemini is temporarily overloaded. Please try again in a minute.", detail: lastError },
+    { status: 503 }
+  );
 }

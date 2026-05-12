@@ -15,10 +15,19 @@ export async function GET() {
       .single();
 
     if (activeRun) {
-      return NextResponse.json(
-        { error: "Pipeline already running", runId: activeRun.id },
-        { status: 409 }
-      );
+      // If the run is older than 10 minutes it's stuck — auto-expire it
+      const ageMs = Date.now() - new Date(activeRun.started_at).getTime();
+      if (ageMs < 10 * 60 * 1000) {
+        return NextResponse.json(
+          { error: "Pipeline already running", runId: activeRun.id },
+          { status: 409 }
+        );
+      }
+      // Expired — mark it failed so the next run can proceed
+      await supabase
+        .from("pipeline_runs")
+        .update({ status: "failed", error: "Timed out", completed_at: new Date().toISOString() })
+        .eq("id", activeRun.id);
     }
   } catch {
     // table may not exist yet — proceed anyway

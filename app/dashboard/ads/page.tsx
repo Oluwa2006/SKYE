@@ -81,143 +81,6 @@ type ActiveTemplate = {
   ad_schema:            AdSchema | null;
 };
 
-type Template = {
-  id:             string;
-  name:           string;
-  duration:       string;
-  accent:         string;
-  bg:             string;
-  description:    string;
-  preview_url:    string | null;   // MP4 — null until admin renders placeholder
-  thumbnail_url:  string | null;   // first frame JPG — null until set
-  required_angle: ProductAngle;
-  angle_hint:     string;          // shown to user when uploading
-  text_slots:     TextSlot[];
-};
-
-const TEMPLATES: Template[] = [
-  {
-    id:             "AdProductSpotlight",
-    name:           "Product Spotlight",
-    duration:       "15s",
-    accent:         "#1d4ed8",
-    bg:             "#eff6ff",
-    description:    "Apple-style hero. Clean background, animated zoom-in, pulsing CTA.",
-    preview_url:    null,
-    thumbnail_url:  null,
-    required_angle: "front",
-    angle_hint:     "Straight-on front shot. Clean or white background preferred.",
-    text_slots: [
-      { key: "headline", label: "Headline",  maxChars: 24, hint: "3–5 words. Short and punchy.",          placeholder: "Crispy. Fresh. Yours." },
-      { key: "subtext",  label: "Subtext",   maxChars: 52, hint: "One benefit sentence.",                 placeholder: "Order now and taste the difference." },
-      { key: "ctaText",  label: "CTA",       maxChars: 16, hint: "Action + object. e.g. 'Order Now'",     placeholder: "Order Now" },
-    ],
-  },
-  {
-    id:             "AdBurgerSwap",
-    name:           "The Swap",
-    duration:       "30s",
-    accent:         "#ea580c",
-    bg:             "#fff7ed",
-    description:    "Full 30-second pre-animated ad. Drop in any product image — everything else stays locked.",
-    preview_url:    null,
-    thumbnail_url:  null,
-    required_angle: "three-quarter",
-    angle_hint:     "3/4 angle shot. Product slightly turned, shows depth.",
-    text_slots: [
-      { key: "headline", label: "Main Hook",  maxChars: 32, hint: "Bold claim. 4–7 words. Creates desire or curiosity.", placeholder: "You've never had it like this." },
-      { key: "subtext",  label: "Subtext",    maxChars: 52, hint: "Word-by-word reveal. Keep it one clean sentence.",    placeholder: "One experience changes everything." },
-      { key: "ctaText",  label: "CTA",        maxChars: 16, hint: "Short action. Matches the energy of the headline.",   placeholder: "Get Yours" },
-    ],
-  },
-  {
-    id:             "AdCinematic",
-    name:           "Cinematic",
-    duration:       "20s",
-    accent:         "#b45309",
-    bg:             "#fefce8",
-    description:    "Slow reveal, golden-hour light. Premium, aspirational feel.",
-    preview_url:    null,
-    thumbnail_url:  null,
-    required_angle: "three-quarter",
-    angle_hint:     "3/4 angle. Dark or moody background works best.",
-    text_slots: [
-      { key: "hook",    label: "Hook",    maxChars: 28, hint: "Premium, aspirational. Think luxury tagline.",   placeholder: "This changes everything." },
-      { key: "subtext", label: "Subtext", maxChars: 52, hint: "Emotional follow-up. Slow fade-in.",            placeholder: "Experience the difference." },
-      { key: "cta",     label: "CTA",     maxChars: 16, hint: "Refined. Avoid hype words.",                   placeholder: "Shop Now" },
-    ],
-  },
-  {
-    id:             "AdLifestyle",
-    name:           "Lifestyle",
-    duration:       "20s",
-    accent:         "#c2410c",
-    bg:             "#fff7ed",
-    description:    "Warm, human, built for social feeds.",
-    preview_url:    null,
-    thumbnail_url:  null,
-    required_angle: "any",
-    angle_hint:     "Any angle. Lifestyle or in-use shots work especially well.",
-    text_slots: [
-      { key: "hook",    label: "Hook",    maxChars: 28, hint: "Conversational. Like talking to a friend.",   placeholder: "Made for real life." },
-      { key: "subtext", label: "Subtext", maxChars: 52, hint: "Relatable benefit. Everyday language.",       placeholder: "Built for the everyday." },
-      { key: "cta",     label: "CTA",     maxChars: 16, hint: "Warm, inviting.",                            placeholder: "Discover More" },
-    ],
-  },
-  {
-    id:             "AdProduct",
-    name:           "Product",
-    duration:       "20s",
-    accent:         "#0369a1",
-    bg:             "#f0f9ff",
-    description:    "Studio-clean with Ken Burns zoom. Sharp, confident, commercial.",
-    preview_url:    null,
-    thumbnail_url:  null,
-    required_angle: "front",
-    angle_hint:     "Dead-on front shot. White or neutral studio background.",
-    text_slots: [
-      { key: "hook",    label: "Hook",    maxChars: 36, hint: "Confident product claim.",    placeholder: "The product you've been waiting for." },
-      { key: "subtext", label: "Subtext", maxChars: 52, hint: "Quality + proof.",            placeholder: "Premium quality. Proven results." },
-      { key: "cta",     label: "CTA",     maxChars: 16, hint: "Direct.",                    placeholder: "Buy Now" },
-    ],
-  },
-  {
-    id:             "AdEnergetic",
-    name:           "Energetic",
-    duration:       "20s",
-    accent:         "#dc2626",
-    bg:             "#fef2f2",
-    description:    "Fast. Bold. Urgent. High-saturation with snap animations.",
-    preview_url:    null,
-    thumbnail_url:  null,
-    required_angle: "any",
-    angle_hint:     "Any angle. High contrast or vibrant background works best.",
-    text_slots: [
-      { key: "hook",    label: "Hook",    maxChars: 20, hint: "Short. Punchy. Urgent. Max 4 words.",   placeholder: "Don't miss out." },
-      { key: "subtext", label: "Subtext", maxChars: 40, hint: "Reinforce urgency.",                   placeholder: "Don't wait. Act now." },
-      { key: "cta",     label: "CTA",     maxChars: 16, hint: "High energy. Exclamation optional.",   placeholder: "Get It Now" },
-    ],
-  },
-  {
-    id:             "AdTextForward",
-    name:           "Text Forward",
-    duration:       "20s",
-    accent:         "#6d28d9",
-    bg:             "#f5f3ff",
-    description:    "Words are the ad. Dark background, word-by-word stagger.",
-    preview_url:    null,
-    thumbnail_url:  null,
-    required_angle: "detail",
-    angle_hint:     "Detail or texture shot. Product is secondary — the copy leads.",
-    text_slots: [
-      { key: "hook",    label: "Hook",    maxChars: 32, hint: "Philosophical or poetic. Words carry the weight.", placeholder: "Words that hit different." },
-      { key: "subtext", label: "Subtext", maxChars: 52, hint: "Slower, quieter follow-up.",                      placeholder: "The words that matter most." },
-      { key: "cta",     label: "CTA",     maxChars: 16, hint: "Understated.",                                    placeholder: "Learn More" },
-    ],
-  },
-];
-
-
 // Map composition prop keys per template
 // (some use hook/cta, others use headline/ctaText — normalised at render time)
 function buildRenderProps(template: { text_slots: TextSlot[] }, fields: Record<string, string>, imageUrl: string, brandName: string, primaryColor: string, accentColor: string) {
@@ -421,7 +284,6 @@ function RenderCard({ job, label }: { job: RenderJob; label: string }) {
 
         {job.state === "done" && job.outputUrl && (
           <div className="space-y-2">
-            {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
             <video
               src={job.outputUrl}
               controls
@@ -525,7 +387,6 @@ function ReferenceAnalyzer({ onTemplateSaved }: { onTemplateSaved: () => void })
   const [fileSize,        setFileSize]       = useState<string | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [analysis,        setAnalysis]       = useState<Record<string, any> | null>(null);
-  const [videoFile,       setVideoFile]      = useState<File | null>(null);
   const [extractingFrame, setExtractingFrame]= useState(false);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
@@ -544,10 +405,8 @@ function ReferenceAnalyzer({ onTemplateSaved }: { onTemplateSaved: () => void })
   const [primaryColor,  setPrimaryColor]  = useState("#ffffff");
   const [accentColor,   setAccentColor]   = useState("#1d4ed8");
   const [templateName,  setTemplateName]  = useState("");
-  const [heroTimestamp, setHeroTimestamp] = useState<number>(0);
 
   // Hero frame extracted from the video
-  const [imgPreview,   setImgPreview]   = useState<string | null>(null);
   const [imgFile,      setImgFile]      = useState<File | null>(null);
   const [imgUrl,       setImgUrl]       = useState<string | null>(null);
   const [imgUploading, setImgUploading] = useState(false);
@@ -555,7 +414,6 @@ function ReferenceAnalyzer({ onTemplateSaved }: { onTemplateSaved: () => void })
   // Render
   const [renderJob, setRenderJob] = useState<RenderJob | null>(null);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
-  const [showColors, setShowColors] = useState(false);
 
   // ── Auto-extract a frame at the given timestamp ──────────────────────────
   async function extractHero(file: File, seconds: number) {
@@ -563,7 +421,6 @@ function ReferenceAnalyzer({ onTemplateSaved }: { onTemplateSaved: () => void })
     try {
       const frameFile = await extractFrameFromVideo(file, seconds);
       setImgFile(frameFile);
-      setImgPreview(URL.createObjectURL(frameFile));
       setImgUrl(null);
     } catch {
       // Frame extraction failed — admin can retry below
@@ -580,7 +437,6 @@ function ReferenceAnalyzer({ onTemplateSaved }: { onTemplateSaved: () => void })
 
     setFileName(file.name);
     setFileSize(`${mb.toFixed(1)}MB`);
-    setVideoFile(file);
     setError(null);
     setPhase("analyzing");
 
@@ -652,8 +508,6 @@ function ReferenceAnalyzer({ onTemplateSaved }: { onTemplateSaved: () => void })
         ? data.hero_product.best_frame_seconds
         : typeof a?.hero_product?.best_frame_seconds === "number"
           ? a.hero_product.best_frame_seconds : 0;
-      setHeroTimestamp(ts);
-
       // Compatibility gate — always extract frame in background, gate the phase
       void extractHero(file, ts);
 
@@ -783,14 +637,12 @@ function ReferenceAnalyzer({ onTemplateSaved }: { onTemplateSaved: () => void })
   function reset() {
     if (pollRef.current) clearInterval(pollRef.current);
     setPhase("drop"); setError(null); setAnalysis(null);
-    setFileName(null); setFileSize(null); setVideoFile(null);
-    setImgFile(null); setImgPreview(null); setImgUrl(null);
+    setFileName(null); setFileSize(null);
+    setImgFile(null); setImgUrl(null);
     setRenderJob(null); setExtractingFrame(false);
     setVideoUploadUrl(null); setOverlayConfig(null); setCompat(null);
     if (videoInputRef.current) videoInputRef.current.value = "";
   }
-
-  const canRender = !!imgFile && !!videoUploadUrl && !!overlayConfig && !imgUploading && !extractingFrame;
 
   return (
     <div className="rounded-[24px] border overflow-hidden" style={{ borderColor: UI.border, background: UI.panel }}>
@@ -869,8 +721,7 @@ function ReferenceAnalyzer({ onTemplateSaved }: { onTemplateSaved: () => void })
 
         {/* ── Phase: compat ── */}
         {phase === "compat" && compat && (() => {
-          const isRed    = compat.verdict === "not_recommended";
-          const isYellow = compat.verdict === "approximable";
+          const isRed = compat.verdict === "not_recommended";
 
           return (
             <div className="space-y-3">
@@ -1001,189 +852,141 @@ function ReferenceAnalyzer({ onTemplateSaved }: { onTemplateSaved: () => void })
           );
         })()}
 
-        {/* ── Phase: build ── */}
+        {/* ── Phase: build — review & save ── */}
         {phase === "build" && (
-          <div className="space-y-5">
+          <div className="space-y-4">
 
-            {/* Analysis success banner */}
-            <div className="rounded-[16px] px-4 py-3 flex items-center gap-3"
-              style={{ background: "rgba(21,128,61,0.05)", border: "1px solid rgba(21,128,61,0.18)" }}>
-              <CheckCircle size={18} weight="fill" style={{ color: "#15803d" }} />
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold" style={{ color: UI.text }}>
-                  Video analyzed · overlay mode
-                  <span className="ml-2 font-normal px-2 py-0.5 rounded-full text-[10px]"
-                    style={{ background: "rgba(29,78,216,0.1)", color: UI.accent }}>
-                    AdVideoOverlay · {Math.round(durationSec)}s
-                  </span>
-                </p>
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                {((analysis as any)?.overview?.overall_energy
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  ?? ((analysis as any)?.ad_schema
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    ? `${(analysis as any).ad_schema.aspect_ratio} · ${(analysis as any).ad_schema.motion?.overall_pacing ?? ""}`
-                    : null)) && (
-                  <p className="text-[11px] mt-0.5 truncate" style={{ color: UI.sub }}>
-                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                    {(analysis as any)?.overview?.overall_energy
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      ?? `${(analysis as any).ad_schema?.aspect_ratio ?? ""} · ${(analysis as any).ad_schema?.motion?.overall_pacing ?? ""}`}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Overlay config — what Gemini detected */}
-            {overlayConfig && (
-              <div className="rounded-[14px] px-4 py-3 grid grid-cols-3 gap-3"
-                style={{ background: "rgba(29,78,216,0.04)", border: "1px solid rgba(29,78,216,0.12)" }}>
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-widest mb-0.5" style={{ color: UI.muted }}>Position</p>
-                  <p className="text-xs font-bold" style={{ color: UI.text }}>
-                    {Math.round(overlayConfig.x_pct)}%, {Math.round(overlayConfig.y_pct)}%
-                  </p>
-                  <p className="text-[10px]" style={{ color: UI.sub }}>left, top</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-widest mb-0.5" style={{ color: UI.muted }}>Size</p>
-                  <p className="text-xs font-bold" style={{ color: UI.text }}>
-                    {Math.round(overlayConfig.width_pct)}% × {Math.round(overlayConfig.height_pct)}%
-                  </p>
-                  <p className="text-[10px]" style={{ color: UI.sub }}>width × height</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-widest mb-0.5" style={{ color: UI.muted }}>Entrance</p>
-                  <p className="text-xs font-bold" style={{ color: UI.text }}>
-                    {overlayConfig.entrance}
-                  </p>
-                  <p className="text-[10px]" style={{ color: UI.sub }}>at {overlayConfig.start_sec}s</p>
-                </div>
-              </div>
-            )}
-
-            {/* Template name */}
             <div>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: UI.sub }}>Template Name</label>
-              <input type="text" value={templateName} onChange={e => setTemplateName(e.target.value)}
-                placeholder="e.g. Dark Hype Launch"
-                className="w-full rounded-[14px] border px-3 py-2.5 text-sm outline-none"
-                style={{ borderColor: UI.border, background: UI.bg, color: UI.text }} />
+              <p className="text-sm font-bold" style={{ color: UI.text }}>AI detected the following</p>
+              <p className="text-xs mt-0.5" style={{ color: UI.sub }}>
+                Review the structure, then save. Consumers pick the template and drop in their own assets.
+              </p>
             </div>
 
-            {/* ── Hero frame ── */}
-            <div className="rounded-[20px] border-2 overflow-hidden"
-              style={{ borderColor: `${UI.accent}30`, background: `${UI.accent}04` }}>
+            {refSchema && (
+              <div className="space-y-3">
 
-              <div className="px-5 py-3 border-b flex items-center justify-between" style={{ borderColor: `${UI.accent}18` }}>
-                <div>
-                  <p className="text-sm font-bold" style={{ color: UI.text }}>Hero Product Frame</p>
-                  <p className="text-xs mt-0.5" style={{ color: UI.sub }}>
-                    Extracted at {heroTimestamp.toFixed(1)}s — this is what consumers will swap out.
-                  </p>
-                </div>
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                {(analysis as any)?.hero_product?.description && (
-                  <span className="shrink-0 text-[10px] font-semibold px-2.5 py-1 rounded-full ml-3"
-                    style={{ background: `${UI.accent}12`, color: UI.accent }}>
-                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                    {(analysis as any).hero_product.description}
-                  </span>
-                )}
-              </div>
-
-              <div className="p-5 space-y-3">
-                <div className="relative rounded-[16px] overflow-hidden bg-black flex items-center justify-center"
-                  style={{ minHeight: 200 }}>
-                  {extractingFrame ? (
-                    <div className="flex flex-col items-center gap-2 py-10">
-                      <CircleNotch size={24} className="animate-spin" style={{ color: UI.accent }} />
-                      <p className="text-xs" style={{ color: UI.sub }}>Extracting at {heroTimestamp.toFixed(1)}s…</p>
+                {/* Visual slots */}
+                <div className="grid grid-cols-3 gap-2">
+                  {refSchema.products.map((p, i) => (
+                    <div key={i} className="rounded-[12px] border px-3 py-2.5 flex items-center gap-2"
+                      style={{
+                        borderColor: p.slot_type === "logo" ? "rgba(139,92,246,0.3)" : "rgba(29,78,216,0.2)",
+                        background:  p.slot_type === "logo" ? "rgba(139,92,246,0.05)" : "rgba(29,78,216,0.04)",
+                      }}>
+                      <span style={{ fontSize: 18 }}>
+                        {p.slot_type === "logo" ? "🏷" : p.slot_type === "lifestyle" ? "📸" : "📦"}
+                      </span>
+                      <div>
+                        <p className="text-[10px] font-bold"
+                          style={{ color: p.slot_type === "logo" ? "#7c3aed" : UI.accent }}>
+                          {p.slot_type === "logo" ? "Logo slot" : p.slot_type === "lifestyle" ? "Lifestyle slot" : "Product slot"}
+                        </p>
+                        <p className="text-[9px]" style={{ color: UI.muted }}>
+                          {p.z_layer.replace(/_/g, " ")}
+                        </p>
+                      </div>
                     </div>
-                  ) : imgPreview ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={imgPreview} alt="Hero frame" className="w-full object-contain" style={{ maxHeight: 280 }} />
-                  ) : (
-                    <div className="flex flex-col items-center gap-2 py-10">
-                      <WarningCircle size={20} style={{ color: UI.muted }} />
-                      <p className="text-xs" style={{ color: UI.muted }}>Frame extraction failed</p>
+                  ))}
+                  {refSchema.logo && (
+                    <div className="rounded-[12px] border px-3 py-2.5 flex items-center gap-2"
+                      style={{ borderColor: "rgba(139,92,246,0.3)", background: "rgba(139,92,246,0.05)" }}>
+                      <span style={{ fontSize: 18 }}>🏷</span>
+                      <div>
+                        <p className="text-[10px] font-bold" style={{ color: "#7c3aed" }}>Logo slot</p>
+                        <p className="text-[9px]" style={{ color: UI.muted }}>top layer</p>
+                      </div>
+                    </div>
+                  )}
+                  {refSchema.products.length === 0 && !refSchema.logo && (
+                    <div className="rounded-[12px] border px-3 py-2.5 col-span-3 text-center"
+                      style={{ borderColor: UI.border }}>
+                      <p className="text-xs" style={{ color: UI.muted }}>No visual slots — text-only ad</p>
                     </div>
                   )}
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <p className="text-[11px] shrink-0" style={{ color: UI.muted }}>Try different frame:</p>
-                  <input
-                    type="number" min={0} step={0.5}
-                    value={heroTimestamp}
-                    onChange={e => setHeroTimestamp(Number(e.target.value))}
-                    className="w-20 rounded-[10px] border px-2 py-1.5 text-xs outline-none"
-                    style={{ borderColor: UI.border, background: UI.bg, color: UI.text }}
-                  />
-                  <span className="text-[11px]" style={{ color: UI.muted }}>s</span>
-                  <button
-                    onClick={() => videoFile && extractHero(videoFile, heroTimestamp)}
-                    disabled={extractingFrame || !videoFile}
-                    className="text-[11px] font-semibold px-3 py-1.5 rounded-[10px] disabled:opacity-40"
-                    style={{ background: `${UI.accent}12`, color: UI.accent }}
-                  >
-                    {extractingFrame ? "Extracting…" : "Re-extract"}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* ── Card colors (collapsible) ── */}
-            <div className="rounded-[16px] border overflow-hidden" style={{ borderColor: UI.border }}>
-              <button onClick={() => setShowColors(v => !v)}
-                className="w-full flex items-center justify-between px-4 py-3 text-left"
-                style={{ background: "rgba(15,23,42,0.02)" }}>
-                <span className="text-xs font-semibold" style={{ color: UI.sub }}>Template card colors</span>
-                <span className="text-xs" style={{ color: UI.muted }}>{showColors ? "▲ hide" : "▼ show"}</span>
-              </button>
-              {showColors && (
-                <div className="px-4 pb-4 pt-3 space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold mb-1.5" style={{ color: UI.sub }}>Background</label>
-                      <input type="color" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)}
-                        className="w-full h-10 rounded-[12px] border cursor-pointer" style={{ borderColor: UI.border }} />
+                {/* Text layers */}
+                {refSchema.text_layers.length > 0 && (
+                  <div className="rounded-[14px] border overflow-hidden" style={{ borderColor: UI.border }}>
+                    <div className="px-3 py-2 border-b"
+                      style={{ borderColor: UI.border, background: "rgba(15,23,42,0.02)" }}>
+                      <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: UI.muted }}>
+                        {refSchema.text_layers.length} text layer{refSchema.text_layers.length !== 1 ? "s" : ""} detected
+                      </p>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold mb-1.5" style={{ color: UI.sub }}>Accent</label>
-                      <input type="color" value={accentColor} onChange={e => setAccentColor(e.target.value)}
-                        className="w-full h-10 rounded-[12px] border cursor-pointer" style={{ borderColor: UI.border }} />
+                      {refSchema.text_layers.map((l, i) => (
+                        <div key={l.id} className="px-3 py-2 flex items-center gap-3"
+                          style={{ borderTop: i > 0 ? `1px solid ${UI.border}` : undefined }}>
+                          <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded shrink-0"
+                            style={{ background: "rgba(29,78,216,0.08)", color: UI.accent }}>
+                            {l.role}
+                          </span>
+                          <p className="text-xs truncate flex-1" style={{ color: UI.text }}>
+                            {l.content || "(empty)"}
+                          </p>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                  <p className="text-[10px]" style={{ color: UI.muted }}>Auto-extracted from reference · adjust if needed</p>
+                )}
+
+                {/* Motion / format pills */}
+                <div className="flex flex-wrap gap-2">
+                  {([
+                    refSchema.motion?.motion_preset ? `🎬 ${refSchema.motion.motion_preset.replace(/_/g, " ")}` : null,
+                    refSchema.motion?.overall_pacing ? `⚡ ${refSchema.motion.overall_pacing.replace(/_/g, " ")}` : null,
+                    `⏱ ${Math.round(refSchema.duration_sec)}s`,
+                    refSchema.aspect_ratio,
+                    refSchema.decorative.length > 0 ? `${refSchema.decorative.length} decorative` : null,
+                  ] as (string | null)[]).filter(Boolean).map((tag, i) => (
+                    <span key={i} className="text-[10px] font-semibold px-2.5 py-1 rounded-full"
+                      style={{ background: "rgba(15,23,42,0.06)", color: UI.sub }}>
+                      {tag}
+                    </span>
+                  ))}
                 </div>
-              )}
+              </div>
+            )}
+
+            {/* Template name — auto-filled, editable */}
+            <div>
+              <label className="text-[10px] font-semibold uppercase tracking-widest block mb-1.5"
+                style={{ color: UI.muted }}>Template name</label>
+              <input type="text" value={templateName} onChange={e => setTemplateName(e.target.value)}
+                placeholder="Auto-detected from reference..."
+                className="w-full rounded-[12px] border px-3 py-2.5 text-sm outline-none"
+                style={{ borderColor: UI.border, background: UI.bg, color: UI.text }} />
             </div>
 
-            {/* ── Render & Save button ── */}
-            <button onClick={handleRenderAndSave} disabled={!canRender}
-              className="w-full flex items-center justify-center gap-2 py-4 rounded-[18px] text-base font-bold transition disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{
-                background: canRender ? UI.accent : `${UI.accent}55`,
-                color: "#fff",
-                boxShadow: canRender ? `0 12px 32px ${UI.accent}44` : "none",
-              }}>
-              {imgUploading ? (
-                <><CircleNotch size={18} className="animate-spin" /> Uploading frame…</>
-              ) : extractingFrame ? (
-                <><CircleNotch size={18} className="animate-spin" /> Extracting hero…</>
+            {/* Single save button */}
+            <button
+              onClick={handleRenderAndSave}
+              disabled={extractingFrame || imgUploading || (!!renderJob && renderJob.state !== "error")}
+              className="w-full flex items-center justify-center gap-3 py-4 rounded-[16px] text-base font-bold transition disabled:opacity-50"
+              style={{ background: UI.accent, color: "#fff", boxShadow: "0 8px 24px rgba(29,78,216,0.28)" }}
+            >
+              {extractingFrame ? (
+                <><CircleNotch size={18} className="animate-spin" /> Preparing template…</>
+              ) : imgUploading ? (
+                <><CircleNotch size={18} className="animate-spin" /> Uploading…</>
+              ) : renderJob?.state === "starting" || renderJob?.state === "rendering" ? (
+                <><CircleNotch size={18} className="animate-spin" /> Rendering template…</>
               ) : (
-                <><FilmSlate size={18} weight="fill" /> Render &amp; Save as Template</>
+                <><FilmSlate size={18} weight="fill" /> Save to Template Library</>
               )}
             </button>
-            {!imgFile && !extractingFrame && (
-              <p className="text-xs text-center" style={{ color: UI.muted }}>
-                Hero frame extraction failed — try a different timestamp above
+
+            {renderJob?.state === "error" && (
+              <p className="text-xs text-center" style={{ color: "#dc2626" }}>
+                {renderJob.error ?? "Render failed — check Lambda config."}
               </p>
             )}
 
           </div>
         )}
+
 
         {/* ── Phase: rendering ── */}
         {phase === "rendering" && renderJob && (
@@ -1282,7 +1085,6 @@ function VideoTemplateCard({
         onClick={() => onSelect(t)}
       >
         <div className="relative overflow-hidden bg-black" style={{ aspectRatio: "9/16" }}>
-          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
           <video {...hoverVideoProps} className="w-full h-full object-cover" />
           <span className="absolute top-2 right-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white"
             style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}>{t.duration}</span>
@@ -1329,7 +1131,6 @@ function VideoTemplateCard({
     >
       {/* ── Video screensaver area ── */}
       <div className="relative bg-black overflow-hidden" style={{ aspectRatio: "16/9" }}>
-        {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
         <video
           src={t.video_url}
           autoPlay
@@ -1898,10 +1699,21 @@ export default function AdStudioPage() {
                         <UploadSimple size={22} style={{ color: selected.accent }} />
                       </div>
                       <div className="text-center px-4">
-                        <p className="text-sm font-semibold" style={{ color: UI.text }}>Drop your product image here</p>
-                        <p className="text-xs mt-1" style={{ color: UI.sub }}>
-                          Your image replaces the hero in &ldquo;{selected.name}&rdquo;
-                        </p>
+                        {(() => {
+                          const heroSlot = selected.ad_schema?.products?.[0]?.slot_type ?? "product";
+                          const uploadLabel =
+                            heroSlot === "logo"      ? "Drop your logo here" :
+                            heroSlot === "lifestyle" ? "Drop a lifestyle photo here" :
+                            "Drop your product image here";
+                          const uploadSub =
+                            heroSlot === "logo"      ? "Your logo replaces the brand mark in this template" :
+                            heroSlot === "lifestyle" ? "Your photo replaces the lifestyle shot" :
+                            `Your image replaces the hero in "${selected.name}"`;
+                          return <>
+                            <p className="text-sm font-semibold" style={{ color: UI.text }}>{uploadLabel}</p>
+                            <p className="text-xs mt-1" style={{ color: UI.sub }}>{uploadSub}</p>
+                          </>;
+                        })()}
                         <p className="text-[10px] mt-1" style={{ color: UI.muted }}>JPG, PNG, WEBP · Click or drag</p>
                       </div>
                     </div>

@@ -68,7 +68,7 @@ async function analyzeWithGemini(videoBuffer: Buffer): Promise<GeminiAnalysis> {
   if (!apiKey) throw new Error("GEMINI_API_KEY not configured");
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-001" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const videoBase64 = videoBuffer.toString("base64");
 

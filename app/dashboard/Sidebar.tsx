@@ -139,7 +139,7 @@ export default function Sidebar() {
             border: "1px solid rgba(255,255,255,0.22)",
           }}
         >
-          <Image src="/logo.png" alt="Agentica" width={20} height={20} className="object-contain" />
+          <Image src="/logo-2.png" alt="Agentica" width={20} height={20} className="object-contain" />
         </div>
 
         <div style={{ ...labelStyle, maxWidth: expanded ? 120 : 0 }}>

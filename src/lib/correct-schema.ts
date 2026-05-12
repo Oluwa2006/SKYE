@@ -1,9 +1,9 @@
 // ─── Pass 2: Structural corrector ─────────────────────────────────────────────
 // Runs AFTER normalizeSchema(). Fixes cross-field inconsistencies that the
 // field-level normalizer cannot catch: stagger collapse, out-of-bounds positions,
-// undersized hero product, and decorative shape self-consistency.
+// undersized hero product, decorative shape self-consistency, and text collisions.
 
-import type { AdSchema, DecorativeLayer, ProductLayer, TextLayer } from "./ad-schema";
+import type { AdSchema, BackgroundLayer, DecorativeLayer, ProductLayer, TextLayer } from "./ad-schema";
 
 // ── Bounds helpers ─────────────────────────────────────────────────────────────
 
@@ -15,6 +15,23 @@ function fixXBounds(x: number, w: number): number {
 function fixYBounds(y: number, h: number): number {
   if (y + h > 99) return Math.max(0, 99 - h);
   return Math.max(0, y);
+}
+
+// ── Background fallback ────────────────────────────────────────────────────────
+// If the background is video/image but src_url is empty, fall back to a solid
+// dark colour so the ad doesn't render on a blank white canvas.
+
+function fixBackground(bg: BackgroundLayer): BackgroundLayer {
+  if ((bg.type === "video" || bg.type === "image") && (!bg.src_url || bg.src_url === "")) {
+    // Demote to gradient so something visible renders
+    return {
+      ...bg,
+      type:              "gradient",
+      gradient_colors:   ["#0f0f0f", "#1a1a2e"],
+      gradient_direction: "to_bottom",
+    };
+  }
+  return bg;
 }
 
 // ── Hero product sizing ────────────────────────────────────────────────────────
@@ -41,15 +58,40 @@ function fixProducts(products: ProductLayer[]): ProductLayer[] {
   });
 }
 
-// ── Text bounds (no height_pct — only x + width matter) ───────────────────────
+// ── Text position collision resolver ──────────────────────────────────────────
+// Sorts text layers by y_pct and pushes any that are within MIN_GAP of the
+// previous one downward. Prevents layers from rendering on top of each other.
+// Also enforces a minimum font size so tiny/invisible layers don't appear.
 
-function fixTexts(layers: TextLayer[]): TextLayer[] {
-  return layers.map(t => {
-    let { x_pct, width_pct } = t;
-    width_pct = Math.min(width_pct, 98);
-    x_pct     = fixXBounds(x_pct, width_pct);
-    return { ...t, x_pct, width_pct };
-  });
+const MIN_VERTICAL_GAP = 9; // % — minimum space between text layer tops
+const MIN_FONT_SIZE_VW = 1.5;
+
+function fixTextCollisions(layers: TextLayer[]): TextLayer[] {
+  if (layers.length <= 1) return layers;
+
+  // Sort by y_pct ascending
+  const sorted = [...layers]
+    .map(t => ({
+      ...t,
+      // Clamp x/width
+      x_pct:     Math.max(0, Math.min(t.x_pct, 99 - t.width_pct)),
+      width_pct: Math.min(t.width_pct, 98),
+      // Enforce minimum font size
+      font_size_vw: Math.max(t.font_size_vw, MIN_FONT_SIZE_VW),
+    }))
+    .sort((a, b) => a.y_pct - b.y_pct);
+
+  // Push layers down until there's no collision
+  for (let i = 1; i < sorted.length; i++) {
+    const prev = sorted[i - 1];
+    const curr = sorted[i];
+    const minY = prev.y_pct + MIN_VERTICAL_GAP;
+    if (curr.y_pct < minY) {
+      sorted[i] = { ...curr, y_pct: Math.min(minY, 92) };
+    }
+  }
+
+  return sorted;
 }
 
 // ── Decorative shape self-consistency ─────────────────────────────────────────
@@ -60,14 +102,12 @@ function fixDecorative(layers: DecorativeLayer[]): DecorativeLayer[] {
 
     switch (d.type) {
       case "circle_ring": {
-        // Must be square to look like a circle
         const size = Math.min(width_pct, height_pct);
         width_pct  = size;
         height_pct = size;
         break;
       }
       case "accent_line": {
-        // Thin horizontal rule — cap height, ensure minimum width
         height_pct = Math.min(height_pct, 0.7);
         if (width_pct < 10) width_pct = 60;
         break;
@@ -77,7 +117,6 @@ function fixDecorative(layers: DecorativeLayer[]): DecorativeLayer[] {
         break;
       }
       case "glow": {
-        // Must be large enough for the blur to be visible
         if (width_pct  < 30) { width_pct  = 55; x_pct = Math.max(0, 50 - 27.5); }
         if (height_pct < 30) { height_pct = 55; y_pct = Math.max(0, 50 - 27.5); }
         break;
@@ -89,7 +128,6 @@ function fixDecorative(layers: DecorativeLayer[]): DecorativeLayer[] {
       }
     }
 
-    // Final bounds clamp
     width_pct  = Math.min(width_pct,  100);
     height_pct = Math.min(height_pct, 100);
     x_pct      = fixXBounds(x_pct, width_pct);
@@ -100,8 +138,14 @@ function fixDecorative(layers: DecorativeLayer[]): DecorativeLayer[] {
 }
 
 // ── Entrance stagger enforcement ───────────────────────────────────────────────
-// If all layers enter within 0.3s of each other, redistribute by z-order.
-// This is the most common reason renders feel flat — everything pops at once.
+
+// Stagger timing by pacing — how many seconds between each layer entering
+const PACING_STAGGER: Record<string, { text: number; product: number; dec: number; textStart: number }> = {
+  whiplash:   { text: 0.04, product: 0.06, dec: 0.04, textStart: 0.15 },
+  fast_punch: { text: 0.07, product: 0.08, dec: 0.06, textStart: 0.22 },
+  medium:     { text: 0.14, product: 0.10, dec: 0.08, textStart: 0.40 },
+  slow_build: { text: 0.24, product: 0.12, dec: 0.10, textStart: 0.55 },
+};
 
 function restaggerEntrances(schema: AdSchema): AdSchema {
   const allTimes = [
@@ -113,13 +157,14 @@ function restaggerEntrances(schema: AdSchema): AdSchema {
   if (allTimes.length === 0) return schema;
 
   const range = Math.max(...allTimes) - Math.min(...allTimes);
-  if (range >= 0.3) return schema; // already staggered — leave it
+  if (range >= 0.3) return schema;
 
-  // Redistribute by z-order
+  const pacing  = schema.motion?.overall_pacing ?? "medium";
+  const timing  = PACING_STAGGER[pacing] ?? PACING_STAGGER.medium;
+
   const bgProducts = schema.products.filter(p => p.z_layer === "behind_all_text");
   const fgProducts = schema.products.filter(p => p.z_layer !== "behind_all_text");
 
-  // Role order for text stagger
   const ROLE_ORDER: Record<string, number> = { hook: 0, subtext: 1, cta: 2, brand: 3, label: 4, other: 5 };
   const sortedTexts = [...schema.text_layers].sort(
     (a, b) => (ROLE_ORDER[a.role] ?? 5) - (ROLE_ORDER[b.role] ?? 5)
@@ -128,16 +173,17 @@ function restaggerEntrances(schema: AdSchema): AdSchema {
   return {
     ...schema,
     products: [
-      ...bgProducts.map((p, i) => ({ ...p, entrance_start_sec: 0.1 + i * 0.1 })),
-      ...fgProducts.map((p, i) => ({ ...p, entrance_start_sec: 0.4 + i * 0.1 })),
+      ...bgProducts.map((p, i) => ({ ...p, entrance_start_sec: 0.08 + i * timing.product })),
+      ...fgProducts.map((p, i) => ({ ...p, entrance_start_sec: 0.3  + i * timing.product })),
     ],
     decorative: schema.decorative.map((d, i) => ({
       ...d,
-      entrance_start_sec: 0.25 + i * 0.08,
+      entrance_start_sec:    0.12 + i * timing.dec,
+      entrance_duration_sec: Math.min(d.entrance_duration_sec, pacing === "whiplash" ? 0.12 : pacing === "fast_punch" ? 0.18 : 0.35),
     })),
     text_layers: sortedTexts.map((t, i) => ({
       ...t,
-      entrance_start_sec: 0.5 + i * 0.22,
+      entrance_start_sec: timing.textStart + i * timing.text,
     })),
   };
 }
@@ -146,8 +192,9 @@ function restaggerEntrances(schema: AdSchema): AdSchema {
 
 export function correctSchema(schema: AdSchema): AdSchema {
   let s = schema;
+  s = { ...s, background:  fixBackground(s.background) };
   s = { ...s, products:    fixProducts(s.products) };
-  s = { ...s, text_layers: fixTexts(s.text_layers) };
+  s = { ...s, text_layers: fixTextCollisions(s.text_layers) };
   s = { ...s, decorative:  fixDecorative(s.decorative) };
   s = restaggerEntrances(s);
   return s;
