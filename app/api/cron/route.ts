@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+// Use request origin at runtime so this works on any deployment
+// baseUrl is resolved per-request below
 const CRON_SECRET = process.env.CRON_SECRET;
 
 export async function GET(req: NextRequest) {
@@ -14,6 +15,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    const baseUrl = req.nextUrl.origin;
     const res = await fetch(`${baseUrl}/api/run-pipeline`, { cache: "no-store" });
     const data = await res.json();
 

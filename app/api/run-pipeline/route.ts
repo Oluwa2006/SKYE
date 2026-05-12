@@ -1,9 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin as supabase } from "@/lib/supabase";
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const baseUrl = req.nextUrl.origin;
   // ── Overlap prevention (best-effort — skip if table missing) ───────────────
   try {
     const { data: activeRun } = await supabase
