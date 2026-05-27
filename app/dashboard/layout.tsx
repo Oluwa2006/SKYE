@@ -1,17 +1,25 @@
 import { Suspense } from "react";
 import { UserProvider } from "./UserContext";
-import HomeButton from "./HomeButton";
+import GlassSidebar from "./GlassSidebar";
 import PageIntro from "./PageIntro";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <UserProvider initial={null}>
-      <div className="min-h-screen" style={{ background:"#f8f9fb" }}>
-        <HomeButton />
+      {/* Soft mesh gradient background */}
+      <div className="min-h-screen" style={{
+        background: "linear-gradient(135deg, #f0f4ff 0%, #fafafa 40%, #f5f0ff 100%)",
+      }}>
+        <Suspense fallback={null}>
+          <GlassSidebar />
+        </Suspense>
+
         <Suspense fallback={null}>
           <PageIntro />
         </Suspense>
-        <main className="min-h-screen">
+
+        {/* Main content offset by sidebar width */}
+        <main className="min-h-screen" style={{ paddingLeft: 220 }}>
           {children}
         </main>
       </div>
