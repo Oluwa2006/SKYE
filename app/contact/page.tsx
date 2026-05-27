@@ -16,15 +16,11 @@ const fade = (delay = 0) => ({
 function GmailLogo() {
   return (
     <svg width="36" height="36" viewBox="0 0 48 48">
-      <path fill="#EA4335" d="M6 40h8V22.4L4 14v22c0 2.2 1.8 4 4 4z"/>
-      <path fill="#34A853" d="M34 40h8c2.2 0 4-1.8 4-4V14l-10 8.4z"/>
-      <path fill="#FBBC05" d="M34 10l-10 7.6L14 10 4 18v.4l10 8V40h20V26.4l10-8V18z"/>
-      <path fill="#EA4335" d="M4 14l10 8.4V22L4 14z" opacity="0"/>
-      <path fill="#C5221F" d="M4 14l10 8.4h0L4 14z" opacity="0"/>
-      <path fill="#4285F4" d="M44 14l-10 8.4V22l10-8z"/>
-      <path fill="#4285F4" d="M44 18v-4l-10 8.4V22l10-8h0z" opacity="0"/>
-      <path fill="#1A73E8" d="M4 18v-4l10 8.4V22L4 18z" opacity="0"/>
-      <path fill="#EA4335" d="M14 10l10 7.6L34 10c0-2.2-1.8-4-4-4H18c-2.2 0-4 1.8-4 4z"/>
+      <path fill="#4caf50" d="M45 16.2l-5 2.75-5 4.75L35 40h7c1.657 0 3-1.343 3-3V16.2z"/>
+      <path fill="#1e88e5" d="M3 16.2l3.614 1.71L13 23.7V40H6c-1.657 0-3-1.343-3-3V16.2z"/>
+      <polygon fill="#e53935" points="35,11.2 24,19.45 13,11.2 12,17 13,23.7 24,31.45 35,23.7 36,17"/>
+      <path fill="#c62828" d="M3 12.298V16.2l10 7.5V11.2L9.876 8.859C9.132 8.301 8.228 8 7.298 8 4.924 8 3 9.924 3 12.298z"/>
+      <path fill="#fbc02d" d="M45 12.298V16.2l-10 7.5V11.2l3.124-2.341C38.868 8.301 39.772 8 40.702 8 43.076 8 45 9.924 45 12.298z"/>
     </svg>
   );
 }
@@ -59,7 +55,7 @@ const CHANNELS = [
     Logo:  XLogo,
     label: "Follow us",
     sub:   "@useagentica",
-    href:  "https://twitter.com/useagentica",
+    href:  "https://x.com/useAgentica",
     bg:    "#f8fafc",
     border:"#e2e8f0",
   },

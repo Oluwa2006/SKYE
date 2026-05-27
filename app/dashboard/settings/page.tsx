@@ -235,11 +235,6 @@ export default function SettingsPage() {
 
   return (
     <div className="p-8 max-w-2xl mx-auto space-y-6 pb-16">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight" style={{ color: "#1e1038", fontFamily: "var(--font-syne)" }}>Settings</h1>
-        <p className="text-sm text-dm mt-1">Configure Agentica and your brand kit</p>
-      </div>
-
       {/* ── Brand Kit ──────────────────────────────────────────────────── */}
       <div className="glass-card rounded-2xl p-6 space-y-6">
         <div className="flex items-center justify-between">

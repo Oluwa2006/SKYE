@@ -70,11 +70,6 @@ export default function ProfilePage() {
 
   return (
     <div className="p-8 max-w-2xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-dh tracking-tight">Profile</h1>
-        <p className="text-sm text-dm mt-1">Your account and workspace details</p>
-      </div>
-
       {/* Avatar card */}
       <div className="glass-card rounded-2xl p-6 flex items-center gap-5">
         <div className="w-16 h-16 rounded-full glass-sub border border-glass flex items-center justify-center shrink-0">

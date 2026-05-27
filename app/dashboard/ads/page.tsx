@@ -1567,18 +1567,8 @@ export default function AdStudioPage() {
     <div className="min-h-screen" style={{ background: UI.bg }}>
       <div className="max-w-5xl mx-auto px-6 py-10 space-y-10">
 
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight" style={{ color: UI.text }}>Ad Studio</h1>
-            <p className="text-sm mt-1" style={{ color: UI.sub }}>
-              {viewMode === "admin"
-                ? "Admin — render compositions, save templates, manage the library."
-                : "Pick a template, drop in your product image, hit Render."}
-            </p>
-          </div>
-
-          {/* Admin / Consumer toggle — admin only */}
+        {/* Admin / Consumer toggle — admin only */}
+        <div className="flex justify-end">
           {isAdmin && (
             <div className="flex items-center gap-1 p-1 rounded-full border shrink-0"
               style={{ borderColor: UI.border, background: UI.panel }}>

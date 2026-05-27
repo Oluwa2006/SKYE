@@ -182,12 +182,7 @@ export default function TeamPage() {
     <div className="p-8 max-w-3xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-dh tracking-tight">Team</h1>
-          <p className="text-sm text-dm mt-1">
-            {members.length} member{members.length !== 1 ? "s" : ""} in your workspace
-          </p>
-        </div>
+        <div />
         <button
           onClick={() => setShowInvite(true)}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-700 transition"

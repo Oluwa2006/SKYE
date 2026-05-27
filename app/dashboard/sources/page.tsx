@@ -14,15 +14,9 @@ export default async function SourcesPage() {
 
   return (
     <div className="p-8 max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight" style={{ color: "#1e1038" }}>Sources</h1>
-          <p className="text-sm mt-1" style={{ color: "rgba(35,25,65,0.45)" }}>{sources.length} tracked sources</p>
-        </div>
-        <div className="flex items-center gap-2.5">
-          <ClearPostsButton />
-          <AddSourceForm />
-        </div>
+      <div className="flex items-center justify-end gap-2.5">
+        <ClearPostsButton />
+        <AddSourceForm />
       </div>
 
       {sources.length > 0 ? (

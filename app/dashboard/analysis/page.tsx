@@ -748,18 +748,8 @@ function BehaviorPageContent() {
 
   return (
     <div className="p-8 max-w-5xl mx-auto space-y-6">
-      {/* Page header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-1.5 text-xs text-dm mb-1">
-            <Brain size={11} className="text-violet-400" />
-            <span className="text-violet-500 font-medium">Intelligence</span>
-            <ChevronRight size={11} />
-            <span className="text-ds font-medium">{meta.title}</span>
-          </div>
-          <h1 className="text-xl font-bold text-dh">{meta.title}</h1>
-          <p className="text-sm text-dm mt-0.5">{meta.subtitle(d)}</p>
-        </div>
+      {/* Refresh button */}
+      <div className="flex justify-end">
         <button
           onClick={load}
           disabled={loading}

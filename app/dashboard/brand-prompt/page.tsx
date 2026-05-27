@@ -54,13 +54,7 @@ export default function BrandPromptPage() {
   return (
     <div className="p-8 max-w-2xl mx-auto space-y-6">
       <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-dh tracking-tight">Brand Prompt</h1>
-          <p className="text-sm text-dm mt-1">
-            This context shapes every idea, caption, and voiceover Agentica generates.
-          </p>
-        </div>
-
+        <div />
         {/* Edit button — only shown in view mode when there's a saved prompt */}
         {hasSaved && !editing && !fetching && (
           <button
