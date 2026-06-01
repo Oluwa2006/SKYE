@@ -44,12 +44,12 @@ export default function GlassSidebar() {
       className="fixed left-3 top-3 bottom-3 z-30 flex flex-col items-center py-4 gap-1"
       style={{
         width: 56,
-        borderRadius: 20,
-        background: "rgba(255,255,255,0.78)",
-        backdropFilter: "blur(24px) saturate(1.8)",
-        WebkitBackdropFilter: "blur(24px) saturate(1.8)",
-        border: "1px solid rgba(255,255,255,0.6)",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)",
+        borderRadius: 22,
+        background: "rgba(248,248,252,0.82)",
+        backdropFilter: "blur(40px) saturate(2) brightness(1.05)",
+        WebkitBackdropFilter: "blur(40px) saturate(2) brightness(1.05)",
+        border: "1px solid rgba(255,255,255,0.7)",
+        boxShadow: "0 8px 40px rgba(0,0,0,0.07), 0 1px 0 rgba(255,255,255,1) inset, 0 -1px 0 rgba(0,0,0,0.03) inset",
       }}>
 
       {/* Logo */}
