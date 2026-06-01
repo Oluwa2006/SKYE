@@ -45,11 +45,11 @@ export default function GlassSidebar() {
       style={{
         width: 56,
         borderRadius: 22,
-        background: "rgba(248,248,252,0.82)",
-        backdropFilter: "blur(40px) saturate(2) brightness(1.05)",
-        WebkitBackdropFilter: "blur(40px) saturate(2) brightness(1.05)",
-        border: "1px solid rgba(255,255,255,0.7)",
-        boxShadow: "0 8px 40px rgba(0,0,0,0.07), 0 1px 0 rgba(255,255,255,1) inset, 0 -1px 0 rgba(0,0,0,0.03) inset",
+        background: "rgba(255,255,255,0.38)",
+        backdropFilter: "blur(48px) saturate(2.2) brightness(1.08)",
+        WebkitBackdropFilter: "blur(48px) saturate(2.2) brightness(1.08)",
+        border: "1px solid rgba(255,255,255,0.55)",
+        boxShadow: "0 8px 40px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.9), inset 0 -1px 0 rgba(0,0,0,0.04)",
       }}>
 
       {/* Logo */}

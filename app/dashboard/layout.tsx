@@ -7,7 +7,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <UserProvider initial={null}>
       <div className="min-h-screen" style={{
-        background: "linear-gradient(160deg,#eef2ff 0%,#f9fafb 50%,#f3f0ff 100%)",
+        background: "linear-gradient(145deg,#c7d7ff 0%,#e8e0ff 35%,#fce4ff 65%,#c9f0ff 100%)",
       }}>
         <Suspense fallback={null}>
           <GlassSidebar />
