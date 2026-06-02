@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "./UserContext";
 import { useRouter } from "next/navigation";
 import {
@@ -109,6 +110,112 @@ function Avatar({ email, name, size=28 }:{ email?:string; name?:string; size?:nu
   );
 }
 
+// ─── Morphing nav ────────────────────────────────────────────────────────────
+type AppUser = { display_name?: string; email?: string } | null;
+
+function MorphNav({
+  nav, user, onNavigate, onSignOut,
+}: {
+  nav: { l: string; h: string }[];
+  user: AppUser;
+  onNavigate: (h: string) => void;
+  onSignOut: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  function handleMouseEnter() {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setOpen(true);
+  }
+  function handleMouseLeave() {
+    timerRef.current = setTimeout(() => setOpen(false), 260);
+  }
+
+  const glassStyle = {
+    background: "rgba(255,255,255,0.58)",
+    backdropFilter: "blur(24px) saturate(1.6)",
+    WebkitBackdropFilter: "blur(24px) saturate(1.6)",
+    border: "1px solid rgba(255,255,255,0.75)",
+    boxShadow: "0 4px 24px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)",
+  };
+
+  return (
+    <div className="flex justify-center pt-3 pb-0 shrink-0" style={{ zIndex: 40 }}>
+      <motion.div
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        layout
+        transition={{ type:"spring", stiffness:420, damping:32 }}
+        style={{
+          ...glassStyle,
+          overflow: "hidden",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          borderRadius: open ? 18 : "50%",
+          height: open ? 44 : 38,
+          width: open ? undefined : 38,
+        }}>
+
+        {/* Collapsed: three small dashes */}
+        <AnimatePresence mode="wait">
+          {!open ? (
+            <motion.div key="dashes"
+              initial={{ opacity:0, scale:0.6 }}
+              animate={{ opacity:1, scale:1 }}
+              exit={{ opacity:0, scale:0.6 }}
+              transition={{ duration:0.18 }}
+              className="flex flex-col items-center justify-center gap-1">
+              {[14, 10, 12].map((w, i) => (
+                <div key={i} style={{ width:w, height:1.5, borderRadius:99, background:"rgba(107,114,128,0.7)" }}/>
+              ))}
+            </motion.div>
+          ) : (
+            <motion.div key="nav"
+              initial={{ opacity:0 }}
+              animate={{ opacity:1 }}
+              exit={{ opacity:0 }}
+              transition={{ duration:0.16, delay:0.06 }}
+              className="flex items-center gap-1 px-3">
+
+              {/* Nav links */}
+              {nav.map(({ l, h }) => {
+                const active = h === "/dashboard";
+                return (
+                  <button key={l} onClick={() => onNavigate(h)}
+                    className="px-3 py-1.5 text-[11px] transition-all whitespace-nowrap"
+                    style={{
+                      borderRadius: 12,
+                      background: active ? "rgba(37,99,235,0.1)" : "transparent",
+                      color: active ? "#2563eb" : "#6b7280",
+                      fontWeight: active ? 700 : 500,
+                    }}>
+                    {l}
+                  </button>
+                );
+              })}
+
+              {/* Right side */}
+              <div className="flex items-center gap-1.5 pl-3 ml-1 border-l border-white/50">
+                <Avatar email={user?.email} name={user?.display_name} size={24}/>
+                <p style={{ fontSize:11, fontWeight:600, color:"#374151", whiteSpace:"nowrap" }}>
+                  {user?.display_name?.split(" ")[0] ?? "User"}
+                </p>
+                <button onClick={onSignOut}
+                  className="w-6 h-6 rounded-xl flex items-center justify-center hover:bg-black/05 transition-colors ml-1">
+                  <SignOut size={11} style={{ color:"#9ca3af" }}/>
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const user   = useUser();
@@ -189,63 +296,22 @@ export default function DashboardPage() {
   return (
     <div className="h-screen flex flex-col overflow-hidden">
 
-      {/* ── Top nav ── */}
-      <Glass className="mx-3 mt-3 mb-0 px-4 py-0 flex items-center gap-4 shrink-0" style={{ borderRadius:18, height:48 }}>
-        {/* Nav links */}
-        <nav className="flex items-center gap-0.5 flex-1">
-          {NAV.map(({ l, h })=>{
-            const active=h==="/dashboard";
-            return (
-              <button key={l} onClick={()=>router.push(h)}
-                className="px-3 py-1.5 text-[11px] font-medium transition-all"
-                style={{
-                  borderRadius:12,
-                  background:active?"rgba(37,99,235,0.1)":"transparent",
-                  color:active?"#2563eb":"#6b7280",
-                  fontWeight:active?700:500,
-                }}>
-                {l}
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* Right: search, bell, avatar */}
-        <div className="flex items-center gap-2 shrink-0">
-          <button className="w-7 h-7 rounded-2xl flex items-center justify-center hover:bg-black/05 transition-colors">
-            <MagnifyingGlass size={13} weight="bold" style={{ color:"#6b7280" }}/>
-          </button>
-          <button className="w-7 h-7 rounded-2xl flex items-center justify-center hover:bg-black/05 transition-colors relative">
-            <Bell size={13} weight="bold" style={{ color:"#6b7280" }}/>
-            <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full" style={{ background:"#2563eb" }}/>
-          </button>
-
-          <div className="flex items-center gap-2 pl-2 border-l border-white/50">
-            <Avatar email={user?.email} name={user?.display_name} size={26}/>
-            <p style={{ fontSize:11, fontWeight:600, color:"#374151" }}>{user?.display_name??"User"}</p>
-            <button onClick={signOut} className="w-6 h-6 rounded-xl flex items-center justify-center hover:bg-black/05 transition-colors">
-              <SignOut size={11} style={{ color:"#9ca3af" }}/>
-            </button>
-          </div>
-        </div>
-      </Glass>
+      {/* ── Collapsing top nav ── */}
+      <MorphNav
+        nav={NAV}
+        user={user}
+        onNavigate={(h)=>router.push(h)}
+        onSignOut={signOut}
+      />
 
       {/* ── Body ── */}
-      <div className="flex-1 min-h-0 flex gap-3 p-3 pt-3">
+      <div className="flex-1 min-h-0 flex gap-3 p-3 pt-2">
 
         {/* LEFT */}
         <div className="flex-1 min-w-0 flex flex-col gap-3">
 
-          {/* Greeting + stats */}
+          {/* Stats */}
           <div className="flex items-center gap-3 shrink-0">
-            <Glass className="px-4 py-2.5 shrink-0" style={{ borderRadius:16 }}>
-              <p style={{ fontSize:13, fontWeight:900, color:"#111827", whiteSpace:"nowrap" }}>
-                Hi, {firstName||"there"} 👋
-              </p>
-              <p style={{ fontSize:10, color:"#9ca3af", marginTop:1 }}>
-                {new Date().toLocaleDateString("en-US",{ weekday:"long", month:"long", day:"numeric" })}
-              </p>
-            </Glass>
             <div className="flex gap-2.5 flex-1">
               {STATS.map(s=><StatCard key={s.label} {...s}/>)}
             </div>
