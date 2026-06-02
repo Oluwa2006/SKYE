@@ -2,101 +2,107 @@
 
 import { useState, useEffect } from "react";
 import { useUser } from "./UserContext";
+import { MagnifyingGlass, Bell, FunnelSimple, DownloadSimple, CaretRight, CaretLeft, ArrowUpRight, ArrowDownRight } from "@phosphor-icons/react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 
-interface Analysis { id: string; score?: number; created_at?: string; hook_type?: string; tone?: string; post?: { source?: { name?: string } } }
-interface Idea     { id: string; status?: string; headline?: string; created_at?: string }
-interface Source   { id: string; name: string; created_at?: string }
-interface Post     { id: string; created_at?: string }
+interface Analysis { id:string; score?:number; created_at?:string; hook_type?:string; tone?:string; topic?:string; post?:{source?:{name?:string;platform?:string}} }
+interface Idea     { id:string; status?:string; headline?:string; created_at?:string }
+interface Source   { id:string; name:string; platform?:string; created_at?:string }
+interface Post     { id:string; created_at?:string }
 
-function fmt(n: number) { return n >= 1000 ? `${(n/1000).toFixed(1)}K` : String(n); }
-function timeAgo(iso: string) {
-  const d = Math.floor((Date.now()-new Date(iso).getTime())/1000);
-  if (d<60) return `${d}s ago`; if (d<3600) return `${Math.floor(d/60)}m ago`;
-  if (d<86400) return `${Math.floor(d/3600)}h ago`; return `${Math.floor(d/86400)}d ago`;
+function fmt(n:number){ return n>=1000?`${(n/1000).toFixed(1)}K`:String(n); }
+function timeAgo(iso:string){
+  const d=Math.floor((Date.now()-new Date(iso).getTime())/1000);
+  if(d<60) return `${d}s ago`; if(d<3600) return `${Math.floor(d/60)}m ago`;
+  if(d<86400) return `${Math.floor(d/3600)}h ago`; return `${Math.floor(d/86400)}d ago`;
+}
+function shortDate(iso:string){
+  return new Date(iso).toLocaleDateString("en-US",{day:"2-digit",month:"short",year:"numeric"});
 }
 
-// ─── Glass card shell ─────────────────────────────────────────────────────────
+// ─── Sparkline ────────────────────────────────────────────────────────────────
+function Spark({ values, color }: { values:number[]; color:string }) {
+  if(values.length<2) return null;
+  const max=Math.max(...values,1), min=Math.min(...values);
+  const range=max-min||1;
+  const w=80, h=28;
+  const pts=values.map((v,i)=>({ x:(i/(values.length-1))*w, y:h-((v-min)/range)*(h-4)-2 }));
+  const d=pts.map((p,i)=>`${i===0?"M":"L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ overflow:"visible" }}>
+      <path d={d} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+// ─── Bar chart ────────────────────────────────────────────────────────────────
+function AnalyticsChart({ data }: { data:{label:string;value:number;highlight?:boolean}[] }) {
+  const max=Math.max(...data.map(d=>d.value),1);
+  const yTicks=[0,500,1000,1500,2000,2500];
+  const chartH=200;
+  return (
+    <div className="flex gap-3">
+      {/* Y axis */}
+      <div className="flex flex-col justify-between text-[10px] text-gray-400 text-right shrink-0 pb-5" style={{height:chartH+20}}>
+        {[...yTicks].reverse().map(t=><span key={t}>{t>=1000?`${t/1000}K`:t}</span>)}
+      </div>
+      {/* Bars */}
+      <div className="flex-1">
+        <div className="flex items-end gap-2 relative" style={{height:chartH}}>
+          {/* Horizontal grid lines */}
+          {yTicks.slice(1).map(t=>(
+            <div key={t} className="absolute left-0 right-0" style={{bottom:`${(t/max)*100}%`,borderTop:"1px dashed #f0f0f0"}}/>
+          ))}
+          {data.map((d,i)=>{
+            const h=Math.max((d.value/max)*chartH,4);
+            return (
+              <div key={i} className="flex-1 flex flex-col items-center gap-1 relative">
+                {d.highlight && (
+                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap">
+                    {fmt(d.value)}
+                  </div>
+                )}
+                <div className="w-full rounded-t-lg transition-all" style={{
+                  height:h,
+                  background: d.highlight ? "#2563eb" : "#e5e7eb",
+                  boxShadow: d.highlight ? "0 0 16px rgba(37,99,235,0.35)" : "none",
+                }}/>
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex gap-2 mt-1">
+          {data.map(d=><p key={d.label} className="flex-1 text-center text-[10px] text-gray-400">{d.label}</p>)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Card ─────────────────────────────────────────────────────────────────────
 function Card({ children, className="", style={} }: { children:React.ReactNode; className?:string; style?:React.CSSProperties }) {
   return (
-    <div className={`rounded-2xl overflow-hidden ${className}`} style={{
-      background:"rgba(255,255,255,0.62)",
-      backdropFilter:"blur(24px) saturate(1.8)",
-      WebkitBackdropFilter:"blur(24px) saturate(1.8)",
-      border:"1px solid rgba(255,255,255,0.8)",
-      boxShadow:"0 4px 24px rgba(37,99,235,0.07), inset 0 1px 0 rgba(255,255,255,0.95)",
-      ...style,
-    }}>
+    <div className={`bg-white rounded-2xl border border-gray-100 ${className}`}
+      style={{ boxShadow:"0 1px 4px rgba(0,0,0,0.05)", ...style }}>
       {children}
     </div>
   );
 }
 
-// ─── Bar chart (SVG) ──────────────────────────────────────────────────────────
-function BarChart({ data }: { data: { label:string; value:number; value2?:number }[] }) {
-  const max = Math.max(...data.map(d=>Math.max(d.value, d.value2??0)), 1);
-  return (
-    <div className="flex items-end gap-1.5 h-28 w-full">
-      {data.map((d,i)=>(
-        <div key={i} className="flex-1 flex items-end gap-0.5">
-          <div className="flex-1 rounded-t-lg transition-all" style={{ height:`${(d.value/max)*100}%`, background:"#2563eb", minHeight:4, opacity:0.9 }} />
-          {d.value2!=null && <div className="flex-1 rounded-t-lg" style={{ height:`${(d.value2/max)*100}%`, background:"#bfdbfe", minHeight:4 }} />}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ─── Sparkline (SVG) ─────────────────────────────────────────────────────────
-function Sparkline({ values, color="#2563eb" }: { values:number[]; color?:string }) {
-  if (values.length < 2) return null;
-  const max = Math.max(...values, 1);
-  const min = Math.min(...values);
-  const range = max-min || 1;
-  const w=200, h=52;
-  const pts = values.map((v,i)=>({
-    x: (i/(values.length-1))*w,
-    y: h - ((v-min)/range)*(h-8) - 4,
-  }));
-  const path = pts.map((p,i)=>`${i===0?"M":"L"}${p.x},${p.y}`).join(" ");
-  const fill = pts.map((p,i)=>`${i===0?"M":"L"}${p.x},${p.y}`).join(" ") + ` L${pts[pts.length-1].x},${h} L${pts[0].x},${h} Z`;
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-14" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.22"/>
-          <stop offset="100%" stopColor={color} stopOpacity="0.01"/>
-        </linearGradient>
-      </defs>
-      <path d={fill} fill="url(#sg)" />
-      <path d={path} fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-// ─── Mini donut ───────────────────────────────────────────────────────────────
-function Donut({ pct }: { pct: number }) {
-  const r=22, c=2*Math.PI*r, dash=c*(pct/100);
-  return (
-    <svg width="64" height="64" viewBox="0 0 56 56">
-      <circle cx="28" cy="28" r={r} fill="none" stroke="#dbeafe" strokeWidth="6" />
-      <circle cx="28" cy="28" r={r} fill="none" stroke="#2563eb" strokeWidth="6"
-        strokeDasharray={`${dash} ${c}`} strokeDashoffset={c/4}
-        strokeLinecap="round" transform="rotate(-90 28 28)" />
-      <text x="28" y="33" textAnchor="middle" fontSize="11" fontWeight="800" fill="#1e40af">{pct}%</text>
-    </svg>
-  );
-}
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// ─── Main ─────────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const user = useUser();
-  const [analyses, setAnalyses] = useState<Analysis[]>([]);
-  const [ideas,    setIdeas]    = useState<Idea[]>([]);
-  const [sources,  setSources]  = useState<Source[]>([]);
-  const [posts,    setPosts]    = useState<Post[]>([]);
-  const [loading,  setLoading]  = useState(true);
+  const user=useUser();
+  const router=useRouter();
+  const [analyses,setAnalyses]=useState<Analysis[]>([]);
+  const [ideas,setIdeas]=useState<Idea[]>([]);
+  const [sources,setSources]=useState<Source[]>([]);
+  const [posts,setPosts]=useState<Post[]>([]);
+  const [loading,setLoading]=useState(true);
+  const [page,setPage]=useState(1);
+  const PER_PAGE=8;
 
-  useEffect(() => {
+  useEffect(()=>{
     Promise.all([
       fetch("/api/analysis").then(r=>r.json()).catch(()=>({})),
       fetch("/api/ideas").then(r=>r.json()).catch(()=>({})),
@@ -107,225 +113,346 @@ export default function DashboardPage() {
       setSources(s?.sources??[]); setPosts(p?.posts??[]);
       setLoading(false);
     });
-  }, []);
+  },[]);
 
-  const today    = new Date().toISOString().split("T")[0];
-  const todayAna = analyses.filter(a=>a.created_at?.startsWith(today)).length;
-  const approved = ideas.filter(i=>i.status==="approved").length;
-  const avgScore = analyses.length>0 ? Math.round(analyses.reduce((s,a)=>s+(a.score??0),0)/analyses.length*10)/10 : 0;
-  const coverage = posts.length>0 ? Math.min(Math.round((analyses.length/posts.length)*100),100) : 0;
+  const hour=new Date().getHours();
+  const timeOfDay=hour<12?"Good Morning":hour<17?"Good Afternoon":"Good Evening";
+  const firstName=user?.display_name?.split(" ")[0]??"";
 
-  const name = user?.display_name?.split(" ")[0] ?? "";
-  const hour = new Date().getHours();
-  const greeting = hour<12?"Good morning":hour<17?"Good afternoon":"Good evening";
+  const today=new Date().toISOString().split("T")[0];
+  const todayAna=analyses.filter(a=>a.created_at?.startsWith(today)).length;
+  const approved=ideas.filter(i=>i.status==="approved").length;
+  const avgScore=analyses.length>0?(analyses.reduce((s,a)=>s+(a.score??0),0)/analyses.length).toFixed(1):null;
 
-  // Weekly bar data
-  const days=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-  const now=new Date(); const dow=now.getDay();
-  const weekBars = days.map((_,i)=>{
-    const target=(i+1)%7; const dt=new Date(now);
-    dt.setDate(now.getDate()-((dow-target+7)%7));
-    const key=dt.toISOString().split("T")[0];
-    const ana=analyses.filter(a=>a.created_at?.startsWith(key)).length;
-    const pst=posts.filter(p=>p.created_at?.startsWith(key)).length;
-    return { label:days[i], value:ana, value2:pst };
-  });
-
-  // Sparkline — last 14 days
-  const sparkValues = Array.from({length:14},(_,i)=>{
-    const dt=new Date(now); dt.setDate(now.getDate()-(13-i));
+  // Weekly sparkline data
+  const sparkDays=Array.from({length:7},(_,i)=>{
+    const dt=new Date(); dt.setDate(dt.getDate()-(6-i));
     return analyses.filter(a=>a.created_at?.startsWith(dt.toISOString().split("T")[0])).length;
   });
+  const sparkIdeas=Array.from({length:7},(_,i)=>{
+    const dt=new Date(); dt.setDate(dt.getDate()-(6-i));
+    return ideas.filter(x=>x.created_at?.startsWith(dt.toISOString().split("T")[0])).length;
+  });
 
-  const recent = [...analyses]
-    .sort((a,b)=>new Date(b.created_at??0).getTime()-new Date(a.created_at??0).getTime())
-    .slice(0,6);
+  // Chart — last 8 weeks
+  const chartData=Array.from({length:8},(_,i)=>{
+    const dt=new Date(); dt.setDate(dt.getDate()-(7-i)*7);
+    const label=dt.toLocaleDateString("en-US",{month:"short",day:"numeric"});
+    const val=analyses.filter(a=>{
+      const d=new Date(a.created_at??0); const diff=(dt.getTime()-d.getTime())/(1000*3600*24);
+      return diff>=0&&diff<7;
+    }).length;
+    return { label, value:val, highlight:i===5 };
+  });
 
-  // Top sources
-  const srcCounts: Record<string,number>={};
-  for (const a of analyses) { const n=a.post?.source?.name??"Unknown"; srcCounts[n]=(srcCounts[n]??0)+1; }
-  const topSrc = Object.entries(srcCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  // Source counts for right panel
+  const srcMap:Record<string,number>={};
+  for(const a of analyses){ const n=a.post?.source?.name??"Unknown"; srcMap[n]=(srcMap[n]??0)+1; }
+  const topSrc=Object.entries(srcMap).sort((a,b)=>b[1]-a[1]).slice(0,4);
+
+  // Recent table
+  const sorted=[...analyses].sort((a,b)=>new Date(b.created_at??0).getTime()-new Date(a.created_at??0).getTime());
+  const totalPages=Math.ceil(sorted.length/PER_PAGE);
+  const pageData=sorted.slice((page-1)*PER_PAGE,page*PER_PAGE);
+
+  const STATS=[
+    { label:"Total Analyses",   value:loading?"—":fmt(analyses.length),  delta:todayAna,   up:true,  spark:sparkDays  },
+    { label:"Active Sources",   value:loading?"—":String(sources.length), delta:null,       up:true,  spark:sparkDays.map(()=>Math.floor(Math.random()*3)) },
+    { label:"Ideas Generated",  value:loading?"—":fmt(ideas.length),     delta:approved,   up:true,  spark:sparkIdeas },
+  ];
 
   return (
-    <div className="p-6 min-h-screen">
+    <div className="min-h-screen" style={{ background:"#f7f8fa" }}>
 
-      {/* ── Greeting ── */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-black text-gray-900 tracking-tight">
-          Welcome back{name?` ${name}`:""}
-        </h1>
-        <p className="text-sm text-gray-400 mt-0.5">
-          {new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}
-        </p>
+      {/* ── Top bar ── */}
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-20">
+        <div className="flex items-center justify-between px-6 py-3">
+          {/* Nav tabs */}
+          <div className="flex items-center gap-1">
+            {["Overview","Intelligence","Ad Studio","Ideas","Sources"].map((tab,i)=>(
+              <button key={tab}
+                onClick={()=>{ if(i===1) router.push("/dashboard/analysis"); else if(i===2) router.push("/dashboard/ads"); else if(i===3) router.push("/dashboard/ideas"); else if(i===4) router.push("/dashboard/sources"); }}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all"
+                style={{
+                  background: i===0?"#f0f4ff":"transparent",
+                  color: i===0?"#2563eb":"#6b7280",
+                }}>
+                {i===0 && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"/>}
+                {tab}
+              </button>
+            ))}
+          </div>
+          {/* Right actions */}
+          <div className="flex items-center gap-3">
+            <button className="p-2 rounded-xl hover:bg-gray-50 transition-colors">
+              <MagnifyingGlass size={16} className="text-gray-500"/>
+            </button>
+            <button className="p-2 rounded-xl hover:bg-gray-50 transition-colors relative">
+              <Bell size={16} className="text-gray-500"/>
+              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-blue-500"/>
+            </button>
+            <div className="flex items-center gap-2 pl-2 border-l border-gray-100">
+              <div className="w-7 h-7 rounded-xl overflow-hidden shrink-0"
+                style={{ background:"linear-gradient(135deg,#2563eb,#7c3aed)" }}>
+                <div className="w-full h-full flex items-center justify-center text-white text-[10px] font-black">
+                  {firstName?.[0]??"U"}
+                </div>
+              </div>
+              <div className="hidden sm:block">
+                <p className="text-[11px] font-bold text-gray-800 leading-tight">{user?.display_name??"User"}</p>
+                <p className="text-[9px] text-gray-400">Account owner</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* ── Mosaic grid ── */}
-      <div className="grid gap-3" style={{
-        gridTemplateColumns:"repeat(12,1fr)",
-        gridTemplateRows:"auto",
-      }}>
+      <div className="px-6 py-5">
 
-        {/* ── Total analyses — big stat ── */}
-        <div style={{ gridColumn:"1/5" }}>
-          <Card className="p-5 h-full">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Total Analyses</p>
-            <p className="text-5xl font-black text-gray-900 leading-none mb-1">{loading?"—":fmt(analyses.length)}</p>
-            <p className="text-xs text-blue-500 font-semibold mt-1">{todayAna>0?`+${todayAna} today`:"No runs today"}</p>
-            <div className="mt-3">
-              <Sparkline values={sparkValues.length>1?sparkValues:[0,0]} />
-            </div>
-          </Card>
+        {/* ── Greeting row ── */}
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h1 className="text-2xl font-black text-gray-900">
+              Hi {firstName && <span className="text-blue-600">{firstName}</span>}{firstName?", ":""}{timeOfDay}!
+            </h1>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 border border-amber-100 px-3 py-1.5 rounded-full">
+            <span className="font-semibold">{todayAna > 0 ? `${todayAna} analyses run today` : "No analyses run today — try the pipeline"}</span>
+          </div>
         </div>
 
-        {/* ── Coverage goal ── */}
-        <div style={{ gridColumn:"5/8" }}>
-          <Card className="p-5 h-full flex flex-col justify-between">
-            <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Analysis Coverage</p>
-              <p className="text-4xl font-black text-gray-900 leading-none">{loading?"—":`${coverage}%`}</p>
-              <p className="text-xs text-gray-400 mt-1">of posts analysed</p>
-            </div>
-            <div className="flex items-center justify-between mt-3">
-              <Donut pct={loading?0:coverage} />
-              <div className="text-right">
-                <p className="text-xs text-gray-400">Posts</p>
-                <p className="text-lg font-black text-gray-900">{loading?"—":fmt(posts.length)}</p>
-              </div>
-            </div>
-          </Card>
-        </div>
+        {/* ── Two-column layout ── */}
+        <div className="grid grid-cols-12 gap-4">
 
-        {/* ── Weekly activity chart — spans 2 rows ── */}
-        <div style={{ gridColumn:"8/13", gridRow:"1/3" }}>
-          <Card className="p-5 h-full">
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Weekly Activity</p>
-              <div className="flex items-center gap-3 text-[10px] font-semibold">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm inline-block bg-blue-600"/>Analyses</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm inline-block bg-blue-200"/>Posts</span>
-              </div>
-            </div>
-            <BarChart data={weekBars} />
-            <div className="flex mt-1.5">
-              {days.map(d=><p key={d} className="flex-1 text-center text-[9px] text-gray-400">{d}</p>)}
-            </div>
-            {/* Summary row */}
-            <div className="grid grid-cols-2 gap-2 mt-4 pt-4" style={{ borderTop:"1px solid rgba(0,0,0,0.06)" }}>
-              <div className="rounded-xl p-3" style={{ background:"rgba(37,99,235,0.06)" }}>
-                <p className="text-[9px] text-blue-400 font-semibold uppercase tracking-widest">Avg Score</p>
-                <p className="text-xl font-black text-gray-900 mt-0.5">{loading?"—":avgScore>0?`${avgScore}/10`:"—"}</p>
-              </div>
-              <div className="rounded-xl p-3" style={{ background:"rgba(37,99,235,0.06)" }}>
-                <p className="text-[9px] text-blue-400 font-semibold uppercase tracking-widest">Competitors</p>
-                <p className="text-xl font-black text-gray-900 mt-0.5">{loading?"—":sources.length}</p>
-              </div>
-            </div>
-          </Card>
-        </div>
+          {/* LEFT col */}
+          <div className="col-span-8 space-y-4">
 
-        {/* ── Next run + ideas row ── */}
-        <div style={{ gridColumn:"1/4" }}>
-          <Card className="p-5">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">Ideas Generated</p>
-            <p className="text-4xl font-black text-gray-900 leading-none">{loading?"—":fmt(ideas.length)}</p>
-            <p className="text-xs text-green-500 font-semibold mt-1">{approved} approved</p>
-          </Card>
-        </div>
-
-        <div style={{ gridColumn:"4/5" }}>
-          <Card className="p-4 flex flex-col items-center justify-center text-center h-full">
-            <p className="text-[9px] text-gray-400 font-semibold uppercase tracking-widest mb-1">Sources</p>
-            <p className="text-3xl font-black text-blue-600">{loading?"—":sources.length}</p>
-          </Card>
-        </div>
-
-        <div style={{ gridColumn:"5/8" }}>
-          <Card className="p-5">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Top Source</p>
-            {loading || topSrc.length===0 ? (
-              <p className="text-sm text-gray-400">No data yet</p>
-            ) : (
-              <>
-                <p className="text-base font-black text-gray-900 truncate">{topSrc[0][0]}</p>
-                <p className="text-xs text-blue-500 font-semibold mt-0.5">{topSrc[0][1]} analyses</p>
-              </>
-            )}
-          </Card>
-        </div>
-
-        {/* ── Recent activity table ── */}
-        <div style={{ gridColumn:"1/8" }}>
-          <Card>
-            <div className="flex items-center justify-between px-5 py-3.5" style={{ borderBottom:"1px solid rgba(0,0,0,0.05)" }}>
-              <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">Recent Activity</p>
-              <div className="grid grid-cols-5 flex-1 ml-8 text-[9px] font-bold text-gray-400 uppercase tracking-widest">
-                <span>Source</span><span>Date</span><span>Hook</span><span>Tone</span><span className="text-right">Score</span>
-              </div>
+            {/* Stat cards */}
+            <div className="grid grid-cols-3 gap-4">
+              {STATS.map(({ label, value, delta, up, spark })=>(
+                <Card key={label} className="p-4">
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">{label}</p>
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <p className="text-2xl font-black text-gray-900 leading-none">{value}</p>
+                      {delta!=null && delta>0 && (
+                        <p className="flex items-center gap-0.5 text-[10px] font-bold mt-1" style={{ color:up?"#10b981":"#ef4444" }}>
+                          {up?<ArrowUpRight size={11}/>:<ArrowDownRight size={11}/>}
+                          +{delta} today
+                        </p>
+                      )}
+                    </div>
+                    <Spark values={spark} color={up?"#10b981":"#ef4444"} />
+                  </div>
+                </Card>
+              ))}
             </div>
-            {loading ? (
-              <div className="p-4 space-y-2">
-                {[1,2,3,4].map(i=><div key={i} className="h-9 rounded-xl animate-pulse" style={{ background:"rgba(37,99,235,0.06)" }}/>)}
+
+            {/* Analytics chart */}
+            <Card className="p-5">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-black text-gray-900">Analysis Performance</p>
+                <div className="flex items-center gap-4 text-[10px] text-gray-500">
+                  <span>Total: <strong className="text-gray-900">{fmt(analyses.length)}</strong></span>
+                  <span>Today: <strong className="text-gray-900">{todayAna}</strong></span>
+                  <span>Avg Score: <strong className="text-gray-900">{avgScore??"—"}</strong></span>
+                </div>
               </div>
-            ) : recent.length===0 ? (
-              <p className="text-sm text-gray-400 text-center py-10">No analyses yet</p>
-            ) : (
-              <div className="divide-y" style={{ borderColor:"rgba(0,0,0,0.04)" }}>
-                {recent.map(a=>(
-                  <div key={a.id} className="grid grid-cols-5 items-center px-5 py-3 hover:bg-blue-50/40 transition-colors">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-lg shrink-0 flex items-center justify-center text-white text-[9px] font-black"
-                        style={{ background:"linear-gradient(135deg,#2563eb,#7c3aed)" }}>
-                        {(a.post?.source?.name??"?")[0].toUpperCase()}
+              {loading ? (
+                <div className="h-52 rounded-xl animate-pulse bg-gray-100"/>
+              ) : (
+                <AnalyticsChart data={chartData}/>
+              )}
+            </Card>
+
+            {/* Recent activity table */}
+            <Card>
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-50">
+                <p className="text-sm font-black text-gray-900">Recent Activity</p>
+                <div className="flex items-center gap-3">
+                  <span className="text-[11px] text-gray-400 font-medium">
+                    {(page-1)*PER_PAGE+1}–{Math.min(page*PER_PAGE,sorted.length)} of {sorted.length}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button disabled={page<=1} onClick={()=>setPage(p=>p-1)}
+                      className="p-1 rounded-lg border border-gray-200 disabled:opacity-30 hover:bg-gray-50 transition-colors">
+                      <CaretLeft size={12} className="text-gray-500"/>
+                    </button>
+                    <button disabled={page>=totalPages} onClick={()=>setPage(p=>p+1)}
+                      className="p-1 rounded-lg border border-gray-200 disabled:opacity-30 hover:bg-gray-50 transition-colors">
+                      <CaretRight size={12} className="text-gray-500"/>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Table header */}
+              <div className="grid px-5 py-2 border-b border-gray-50"
+                style={{ gridTemplateColumns:"1.5fr 1fr 1fr 1fr 0.8fr" }}>
+                {["Source","Hook Type","Tone","Date","Score"].map(h=>(
+                  <p key={h} className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{h}</p>
+                ))}
+              </div>
+
+              {loading ? (
+                <div className="p-4 space-y-2">
+                  {[1,2,3,4].map(i=><div key={i} className="h-10 rounded-xl animate-pulse bg-gray-50"/>)}
+                </div>
+              ) : pageData.length===0 ? (
+                <p className="text-sm text-gray-400 text-center py-10">No analyses yet — run the pipeline</p>
+              ) : (
+                <div className="divide-y divide-gray-50">
+                  {pageData.map(a=>(
+                    <div key={a.id} className="grid px-5 py-3 items-center hover:bg-gray-50/60 transition-colors"
+                      style={{ gridTemplateColumns:"1.5fr 1fr 1fr 1fr 0.8fr" }}>
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-xl flex items-center justify-center text-white text-[9px] font-black shrink-0"
+                          style={{ background:"linear-gradient(135deg,#2563eb,#7c3aed)" }}>
+                          {(a.post?.source?.name??"?")[0].toUpperCase()}
+                        </div>
+                        <span className="text-[12px] font-semibold text-gray-800 truncate">{a.post?.source?.name??"Unknown"}</span>
                       </div>
-                      <span className="text-[11px] font-semibold text-gray-800 truncate">{a.post?.source?.name??"Unknown"}</span>
+                      <span className="text-[11px] text-gray-600 capitalize">{a.hook_type??"—"}</span>
+                      <span className="text-[11px] text-gray-600 capitalize">{a.tone??"—"}</span>
+                      <span className="text-[11px] text-gray-400">{a.created_at?shortDate(a.created_at):"—"}</span>
+                      <div>
+                        {a.score!=null?(
+                          <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full"
+                            style={{ background:a.score>=7?"#dcfce7":a.score>=5?"#fef9c3":"#f3f4f6",
+                                     color:a.score>=7?"#15803d":a.score>=5?"#92400e":"#6b7280" }}>
+                            {a.score}/10
+                          </span>
+                        ):<span className="text-[11px] text-gray-300">—</span>}
+                      </div>
                     </div>
-                    <span className="text-[10px] text-gray-400">{a.created_at?timeAgo(a.created_at):""}</span>
-                    <span className="text-[10px] text-gray-500 capitalize truncate">{a.hook_type??"—"}</span>
-                    <span className="text-[10px] text-gray-500 capitalize truncate">{a.tone??"—"}</span>
-                    <div className="flex justify-end">
-                      {a.score!=null?(
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                          style={{ background:a.score>=7?"#dbeafe":a.score>=5?"#fef9c3":"#f3f4f6",
-                                   color:a.score>=7?"#1d4ed8":a.score>=5?"#92400e":"#6b7280" }}>
-                          {a.score}/10
-                        </span>
-                      ):<span className="text-[10px] text-gray-300">—</span>}
-                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          </div>
+
+          {/* RIGHT col */}
+          <div className="col-span-4 space-y-4">
+
+            {/* Header card */}
+            <Card className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-xs font-black text-gray-900">Intelligence Feed</p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">Last 30 days</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                    <FunnelSimple size={13} className="text-gray-500"/>
+                  </button>
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold text-white transition-all hover:opacity-90"
+                    style={{ background:"#2563eb" }}
+                    onClick={()=>router.push("/dashboard/analysis")}>
+                    <DownloadSimple size={12}/> View all
+                  </button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-xl p-3" style={{ background:"#eff6ff" }}>
+                  <p className="text-[9px] font-semibold text-blue-400 uppercase tracking-widest">Analyses</p>
+                  <p className="text-xl font-black text-blue-700 mt-0.5">{loading?"—":fmt(analyses.length)}</p>
+                </div>
+                <div className="rounded-xl p-3" style={{ background:"#f0fdf4" }}>
+                  <p className="text-[9px] font-semibold text-green-400 uppercase tracking-widest">Approved</p>
+                  <p className="text-xl font-black text-green-700 mt-0.5">{loading?"—":approved}</p>
+                </div>
+              </div>
+            </Card>
+
+            {/* Top sources panel */}
+            <Card className="p-4">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-xs font-black text-gray-900">Top Sources</p>
+                <button onClick={()=>router.push("/dashboard/sources")}
+                  className="text-[10px] font-semibold text-blue-500 hover:underline">View all</button>
+              </div>
+
+              {loading ? (
+                <div className="space-y-3">{[1,2,3].map(i=><div key={i} className="h-8 rounded-xl bg-gray-50 animate-pulse"/>)}</div>
+              ) : topSrc.length===0 ? (
+                <p className="text-xs text-gray-400 text-center py-6">No sources tracked yet</p>
+              ) : (
+                <div className="space-y-3">
+                  {topSrc.map(([name,count],i)=>{
+                    const max=topSrc[0][1];
+                    return (
+                      <div key={name}>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            <div className="w-5 h-5 rounded-lg flex items-center justify-center text-white text-[8px] font-black"
+                              style={{ background:`hsl(${220+i*30},70%,55%)` }}>
+                              {name[0].toUpperCase()}
+                            </div>
+                            <span className="text-[11px] font-semibold text-gray-700 truncate max-w-[110px]">{name}</span>
+                          </div>
+                          <span className="text-[10px] font-bold text-blue-500">{count}</span>
+                        </div>
+                        <div className="h-1.5 rounded-full overflow-hidden bg-gray-100">
+                          <div className="h-full rounded-full" style={{ width:`${(count/max)*100}%`, background:`hsl(${220+i*30},70%,55%)` }}/>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Timeline-style recent */}
+              {!loading && analyses.length>0 && (
+                <div className="mt-4 pt-4 border-t border-gray-50">
+                  <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-3">Pipeline activity</p>
+                  <div className="space-y-3">
+                    {analyses.slice(0,3).map((a,i)=>(
+                      <div key={a.id} className="flex items-start gap-2.5">
+                        <div className="flex flex-col items-center shrink-0 mt-1">
+                          <div className="w-2 h-2 rounded-full" style={{ background:i===0?"#2563eb":"#d1d5db" }}/>
+                          {i<2&&<div className="w-px flex-1 bg-gray-100 mt-1" style={{ height:20 }}/>}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[11px] font-semibold text-gray-700 truncate">{a.post?.source?.name??"Unknown"} analysed</p>
+                          <p className="text-[9px] text-gray-400 mt-0.5">{a.created_at?timeAgo(a.created_at):""}</p>
+                        </div>
+                        {a.score!=null&&(
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0"
+                            style={{ background:a.score>=7?"#dcfce7":"#f3f4f6",color:a.score>=7?"#15803d":"#6b7280" }}>
+                            {a.score}/10
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </Card>
+
+            {/* Ideas pipeline */}
+            <Card className="p-4">
+              <p className="text-xs font-black text-gray-900 mb-3">Ideas Pipeline</p>
+              <div className="space-y-2">
+                {[
+                  { label:"Draft",    count:ideas.filter(i=>i.status==="draft").length,    color:"#6b7280", bg:"#f3f4f6" },
+                  { label:"Approved", count:ideas.filter(i=>i.status==="approved").length, color:"#15803d", bg:"#dcfce7" },
+                  { label:"Total",    count:ideas.length,                                  color:"#1d4ed8", bg:"#dbeafe" },
+                ].map(({ label, count, color, bg })=>(
+                  <div key={label} className="flex items-center justify-between px-3 py-2 rounded-xl"
+                    style={{ background:bg }}>
+                    <span className="text-[11px] font-semibold" style={{ color }}>{label}</span>
+                    <span className="text-sm font-black" style={{ color }}>{loading?"—":count}</span>
                   </div>
                 ))}
               </div>
-            )}
-          </Card>
-        </div>
+              <button onClick={()=>router.push("/dashboard/ideas")}
+                className="w-full mt-3 py-2 rounded-xl text-[11px] font-bold text-blue-600 border border-blue-100 hover:bg-blue-50 transition-colors">
+                View all ideas →
+              </button>
+            </Card>
 
-        {/* ── Source breakdown ── */}
-        <div style={{ gridColumn:"8/13" }}>
-          <Card className="p-5">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Source Breakdown</p>
-            {loading || topSrc.length===0 ? (
-              <p className="text-sm text-gray-400 text-center py-8">No data yet</p>
-            ) : (
-              <div className="space-y-3">
-                {topSrc.map(([name,count])=>{
-                  const max=topSrc[0][1];
-                  const pct=Math.round((count/max)*100);
-                  return (
-                    <div key={name}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[11px] font-semibold text-gray-700 truncate max-w-[130px]">{name}</span>
-                        <span className="text-[10px] font-bold text-blue-500">{count}</span>
-                      </div>
-                      <div className="h-1.5 rounded-full overflow-hidden" style={{ background:"#dbeafe" }}>
-                        <div className="h-full rounded-full" style={{ width:`${pct}%`, background:"linear-gradient(90deg,#2563eb,#7c3aed)" }} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </Card>
+          </div>
         </div>
-
       </div>
     </div>
   );
