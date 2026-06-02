@@ -16,7 +16,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <PageIntro />
         </Suspense>
         {/* Offset for the floating sidebar (56px wide + 12px left margin + 12px gap) */}
-        <main className="min-h-screen" style={{ paddingLeft: 80 }}>
+        <main className="min-h-screen" style={{ paddingLeft: 68 }}>
           {children}
         </main>
       </div>

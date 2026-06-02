@@ -43,8 +43,8 @@ export default function GlassSidebar() {
     <aside
       className="fixed left-3 top-3 bottom-3 z-30 flex flex-col items-center py-4 gap-1"
       style={{
-        width: 56,
-        borderRadius: 22,
+        width: 44,
+        borderRadius: 16,
         background: "rgba(255,255,255,0.38)",
         backdropFilter: "blur(48px) saturate(2.2) brightness(1.08)",
         WebkitBackdropFilter: "blur(48px) saturate(2.2) brightness(1.08)",
@@ -54,9 +54,9 @@ export default function GlassSidebar() {
 
       {/* Logo */}
       <div className="mb-3 shrink-0">
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+        <div className="w-6 h-6 rounded-lg flex items-center justify-center"
           style={{ background:"linear-gradient(135deg,#007AFF,#5856D6)", boxShadow:"0 3px 10px rgba(0,122,255,0.35)" }}>
-          <Image src="/logo-2.png" alt="" width={16} height={16} className="object-contain" />
+          <Image src="/logo-2.png" alt="" width={13} height={13} className="object-contain" />
         </div>
       </div>
 
@@ -76,7 +76,7 @@ export default function GlassSidebar() {
                 onClick={() => router.push(href)}
                 onMouseEnter={() => setTooltip(label)}
                 onMouseLeave={() => setTooltip(null)}
-                className="w-9 h-9 rounded-2xl flex items-center justify-center transition-all"
+                className="w-7 h-7 rounded-xl flex items-center justify-center transition-all"
                 style={{
                   background: active ? "linear-gradient(135deg,#007AFF,#5856D6)" : "transparent",
                   boxShadow:  active ? "0 4px 12px rgba(0,122,255,0.3)" : "none",
@@ -84,7 +84,7 @@ export default function GlassSidebar() {
                   transition: "all 160ms cubic-bezier(0.34,1.56,0.64,1)",
                 }}>
                 <Icon
-                  size={16}
+                  size={13}
                   weight={active ? "fill" : "regular"}
                   style={{ color: active ? "#fff" : tooltip === label ? "#007AFF" : "#8e8e93" }}
                 />
