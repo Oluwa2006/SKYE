@@ -8,77 +8,75 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip,
 } from "recharts";
 import {
-  MagnifyingGlass, Bell, FunnelSimple,
-  CaretRight, CaretLeft, ArrowUpRight,
-  TrendUp, Lightbulb, ChartBar, Users,
+  MagnifyingGlass, Bell, CaretRight, CaretLeft,
+  ArrowUpRight, TrendUp, Lightbulb, ChartBar, Users,
 } from "@phosphor-icons/react";
 
 interface Analysis { id:string; score?:number; created_at?:string; hook_type?:string; tone?:string; post?:{source?:{name?:string}} }
-interface Idea     { id:string; status?:string; headline?:string; created_at?:string }
+interface Idea     { id:string; status?:string; created_at?:string }
 interface Source   { id:string; name:string; created_at?:string }
 interface Post     { id:string; created_at?:string }
 
 function fmt(n:number){ return n>=1000?`${(n/1000).toFixed(1)}K`:String(n); }
 function shortDate(iso:string){
-  return new Date(iso).toLocaleDateString("en-US",{month:"short",day:"2-digit",year:"numeric"});
+  return new Date(iso).toLocaleDateString("en-US",{month:"short",day:"2-digit"});
 }
 function timeAgo(iso:string){
   const d=Math.floor((Date.now()-new Date(iso).getTime())/1000);
-  if(d<60) return `${d}s ago`; if(d<3600) return `${Math.floor(d/60)}m ago`;
-  if(d<86400) return `${Math.floor(d/3600)}h ago`; return `${Math.floor(d/86400)}d ago`;
+  if(d<3600) return `${Math.floor(d/60)}m ago`;
+  if(d<86400) return `${Math.floor(d/3600)}h ago`;
+  return `${Math.floor(d/86400)}d ago`;
 }
 
-// ─── Custom tooltip ───────────────────────────────────────────────────────────
-function CustomTooltip({ active, payload, label }: { active?:boolean; payload?:{value:number}[]; label?:string }) {
+function Tip({ active, payload, label }:{ active?:boolean; payload?:{value:number}[]; label?:string }) {
   if(!active||!payload?.length) return null;
   return (
-    <div className="rounded-xl px-3 py-2 text-xs font-semibold shadow-lg"
-      style={{ background:"#111827", color:"#fff", border:"none" }}>
-      <p className="text-gray-400 mb-0.5">{label}</p>
-      <p className="text-white font-bold">{payload[0].value} analyses</p>
+    <div className="rounded-lg px-2.5 py-1.5 text-[11px] font-semibold shadow-lg"
+      style={{ background:"#111", color:"#fff" }}>
+      <p className="text-gray-400 text-[10px]">{label}</p>
+      <p>{payload[0].value} analyses</p>
     </div>
   );
 }
 
-// ─── Stat card ────────────────────────────────────────────────────────────────
-function StatCard({ icon:Icon, label, value, delta, color, sparkData }:{
+function StatCard({ icon:Icon, label, value, delta, color, spark }:{
   icon:React.ElementType; label:string; value:string;
-  delta?:string; color:string; sparkData:{v:number}[];
+  delta?:string; color:string; spark:{v:number}[];
 }) {
   return (
-    <div className="bg-white rounded-2xl p-5 border border-gray-100"
-      style={{ boxShadow:"0 1px 6px rgba(0,0,0,0.04)" }}>
-      <div className="flex items-start justify-between mb-3">
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-          style={{ background:`${color}15` }}>
-          <Icon size={16} weight="duotone" style={{ color }} />
+    <div className="rounded-xl p-3 border border-gray-100 bg-white flex flex-col gap-1"
+      style={{ boxShadow:"0 1px 4px rgba(0,0,0,0.04)" }}>
+      <div className="flex items-center justify-between">
+        <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background:`${color}12` }}>
+          <Icon size={12} weight="duotone" style={{ color }}/>
         </div>
         {delta && (
-          <span className="flex items-center gap-0.5 text-[11px] font-semibold px-2 py-0.5 rounded-full"
-            style={{ background:`${color}12`, color }}>
-            <ArrowUpRight size={10}/>{delta}
+          <span className="flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
+            style={{ background:`${color}10`, color }}>
+            <ArrowUpRight size={8}/>{delta}
           </span>
         )}
       </div>
-      <p className="text-[11px] font-medium text-gray-400 mb-1">{label}</p>
-      <p className="text-2xl font-black text-gray-900 leading-none mb-3">{value}</p>
-      <ResponsiveContainer width="100%" height={40}>
-        <AreaChart data={sparkData} margin={{top:0,right:0,left:0,bottom:0}}>
-          <defs>
-            <linearGradient id={`sg-${label}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={color} stopOpacity={0.2}/>
-              <stop offset="100%" stopColor={color} stopOpacity={0}/>
-            </linearGradient>
-          </defs>
-          <Area type="monotone" dataKey="v" stroke={color} strokeWidth={1.5}
-            fill={`url(#sg-${label})`} dot={false} />
-        </AreaChart>
-      </ResponsiveContainer>
+      <p className="text-[10px] text-gray-400 font-medium leading-none">{label}</p>
+      <p className="text-lg font-black text-gray-900 leading-none">{value}</p>
+      <div className="mt-0.5">
+        <ResponsiveContainer width="100%" height={24}>
+          <AreaChart data={spark} margin={{top:0,right:0,left:0,bottom:0}}>
+            <defs>
+              <linearGradient id={`g-${label}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={color} stopOpacity={0.15}/>
+                <stop offset="100%" stopColor={color} stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            <Area type="monotone" dataKey="v" stroke={color} strokeWidth={1.2}
+              fill={`url(#g-${label})`} dot={false}/>
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const user   = useUser();
   const router = useRouter();
@@ -89,7 +87,7 @@ export default function DashboardPage() {
   const [posts,   setPosts]    = useState<Post[]>([]);
   const [loading, setLoading]  = useState(true);
   const [page,    setPage]     = useState(1);
-  const PER_PAGE = 8;
+  const PER_PAGE = 5;
 
   useEffect(()=>{
     Promise.all([
@@ -104,345 +102,267 @@ export default function DashboardPage() {
     });
   },[]);
 
-  const hour = new Date().getHours();
-  const timeOfDay = hour<12?"Morning":hour<17?"Afternoon":"Evening";
-  const firstName = user?.display_name?.split(" ")[0]??"";
-
-  const today    = new Date().toISOString().split("T")[0];
-  const todayAna = analyses.filter(a=>a.created_at?.startsWith(today)).length;
-  const approved = ideas.filter(i=>i.status==="approved").length;
-  const avgScore = analyses.length>0
+  const hour=new Date().getHours();
+  const timeOfDay=hour<12?"Morning":hour<17?"Afternoon":"Evening";
+  const firstName=user?.display_name?.split(" ")[0]??"";
+  const today=new Date().toISOString().split("T")[0];
+  const todayAna=analyses.filter(a=>a.created_at?.startsWith(today)).length;
+  const approved=ideas.filter(i=>i.status==="approved").length;
+  const avgScore=analyses.length>0
     ? (analyses.reduce((s,a)=>s+(a.score??0),0)/analyses.length).toFixed(1) : "—";
 
-  // Spark data — last 10 days
-  const now = new Date();
-  const sparkBase = Array.from({length:10},(_,i)=>{
-    const dt=new Date(now); dt.setDate(now.getDate()-(9-i));
-    return { v: analyses.filter(a=>a.created_at?.startsWith(dt.toISOString().split("T")[0])).length };
-  });
-  const sparkIdeas = Array.from({length:10},(_,i)=>{
-    const dt=new Date(now); dt.setDate(now.getDate()-(9-i));
-    return { v: ideas.filter(x=>x.created_at?.startsWith(dt.toISOString().split("T")[0])).length };
+  const now=new Date();
+  const mkSpark=(fn:(dt:Date)=>number)=>Array.from({length:10},(_,i)=>{ const dt=new Date(now); dt.setDate(now.getDate()-(9-i)); return { v:fn(dt) }; });
+  const sparkAna   = mkSpark(dt=>analyses.filter(a=>a.created_at?.startsWith(dt.toISOString().split("T")[0])).length);
+  const sparkIdeas = mkSpark(dt=>ideas.filter(x=>x.created_at?.startsWith(dt.toISOString().split("T")[0])).length);
+
+  const barData=Array.from({length:7},(_,i)=>{
+    const dt=new Date(now); dt.setDate(now.getDate()-(6-i)*7);
+    return {
+      label: dt.toLocaleDateString("en-US",{month:"short",day:"numeric"}),
+      analyses: analyses.filter(a=>{ const d=new Date(a.created_at??0); const diff=(dt.getTime()-d.getTime())/(1000*3600*24); return diff>=0&&diff<7; }).length,
+    };
   });
 
-  // Bar chart — last 8 weeks
-  const barData = Array.from({length:8},(_,i)=>{
-    const dt=new Date(now); dt.setDate(now.getDate()-(7-i)*7);
-    const label = dt.toLocaleDateString("en-US",{month:"short",day:"numeric"});
-    const analyses_ = analyses.filter(a=>{
-      const d=new Date(a.created_at??0);
-      const diff=(dt.getTime()-d.getTime())/(1000*3600*24);
-      return diff>=0&&diff<7;
-    }).length;
-    return { label, analyses: analyses_ };
-  });
-
-  // Source breakdown
   const srcMap:Record<string,number>={};
   for(const a of analyses){ const n=a.post?.source?.name??"Unknown"; srcMap[n]=(srcMap[n]??0)+1; }
-  const topSrc = Object.entries(srcMap).sort((a,b)=>b[1]-a[1]).slice(0,4);
+  const topSrc=Object.entries(srcMap).sort((a,b)=>b[1]-a[1]).slice(0,3);
 
-  // Table
-  const sorted = [...analyses].sort((a,b)=>new Date(b.created_at??0).getTime()-new Date(a.created_at??0).getTime());
-  const totalPages = Math.ceil(sorted.length/PER_PAGE);
-  const pageData   = sorted.slice((page-1)*PER_PAGE, page*PER_PAGE);
+  const sorted=[...analyses].sort((a,b)=>new Date(b.created_at??0).getTime()-new Date(a.created_at??0).getTime());
+  const totalPages=Math.ceil(sorted.length/PER_PAGE);
+  const pageData=sorted.slice((page-1)*PER_PAGE,page*PER_PAGE);
 
-  const STATS = [
-    { icon:ChartBar, label:"Total Analyses",  value:loading?"—":fmt(analyses.length), delta:todayAna>0?`+${todayAna} today`:undefined, color:"#2563eb", sparkData:sparkBase   },
-    { icon:TrendUp,  label:"Avg Score",       value:loading?"—":`${avgScore}/10`,     delta:undefined,                                  color:"#7c3aed", sparkData:sparkBase   },
-    { icon:Lightbulb,label:"Ideas",           value:loading?"—":fmt(ideas.length),    delta:approved>0?`${approved} approved`:undefined, color:"#059669", sparkData:sparkIdeas  },
-    { icon:Users,    label:"Competitors",     value:loading?"—":String(sources.length),delta:undefined,                                  color:"#f59e0b", sparkData:sparkBase.map(d=>({v:Math.round(d.v*0.5)})) },
+  const STATS=[
+    { icon:ChartBar, label:"Analyses",   value:loading?"—":fmt(analyses.length), delta:todayAna>0?`+${todayAna}`:undefined, color:"#2563eb", spark:sparkAna  },
+    { icon:TrendUp,  label:"Avg Score",  value:loading?"—":`${avgScore}/10`,     delta:undefined,                            color:"#7c3aed", spark:sparkAna  },
+    { icon:Lightbulb,label:"Ideas",      value:loading?"—":fmt(ideas.length),    delta:approved>0?`${approved} ok`:undefined, color:"#059669", spark:sparkIdeas },
+    { icon:Users,    label:"Competitors",value:loading?"—":String(sources.length),delta:undefined,                            color:"#f59e0b", spark:sparkAna.map(d=>({v:Math.min(d.v,sources.length)})) },
   ];
 
   return (
-    <div className="min-h-screen" style={{ background:"#f7f8fa", fontFamily:"var(--font-inter)" }}>
+    <div className="h-screen flex flex-col overflow-hidden bg-white">
 
-      {/* ── Top nav bar ── */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-20" style={{ boxShadow:"0 1px 0 rgba(0,0,0,0.05)" }}>
-        <div className="flex items-center justify-between px-6 h-14">
-
-          {/* Page tabs */}
-          <nav className="flex items-center gap-1">
-            {[
-              { label:"Overview",      href:"/dashboard" },
-              { label:"Intelligence",  href:"/dashboard/analysis" },
-              { label:"Ad Studio",     href:"/dashboard/ads" },
-              { label:"Ideas",         href:"/dashboard/ideas" },
-              { label:"Sources",       href:"/dashboard/sources" },
-            ].map(({ label, href })=>{
-              const active = href==="/dashboard";
-              return (
-                <button key={label} onClick={()=>router.push(href)}
-                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[12px] font-semibold transition-all"
-                  style={{ background:active?"#eff6ff":"transparent", color:active?"#2563eb":"#6b7280" }}>
-                  {active && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"/>}
-                  {label}
-                </button>
-              );
-            })}
-          </nav>
-
-          {/* Right */}
-          <div className="flex items-center gap-2">
-            <button className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-gray-100 transition-colors">
-              <MagnifyingGlass size={15} className="text-gray-400"/>
+      {/* ── Top bar ── */}
+      <div className="flex items-center justify-between px-5 h-11 shrink-0 border-b border-gray-100">
+        <nav className="flex items-center gap-0.5">
+          {[
+            { l:"Overview",     h:"/dashboard" },
+            { l:"Intelligence", h:"/dashboard/analysis" },
+            { l:"Ad Studio",    h:"/dashboard/ads" },
+            { l:"Ideas",        h:"/dashboard/ideas" },
+            { l:"Sources",      h:"/dashboard/sources" },
+          ].map(({ l, h })=>(
+            <button key={l} onClick={()=>router.push(h)}
+              className="flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-medium transition-all"
+              style={{ background:h==="/dashboard"?"#eff6ff":"transparent", color:h==="/dashboard"?"#2563eb":"#9ca3af" }}>
+              {h==="/dashboard"&&<span className="w-1.5 h-1.5 rounded-full bg-blue-500"/>}
+              {l}
             </button>
-            <button className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-gray-100 transition-colors relative">
-              <Bell size={15} className="text-gray-400"/>
-              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-blue-500"/>
-            </button>
-            <div className="flex items-center gap-2.5 pl-3 ml-1 border-l border-gray-100">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white text-[11px] font-black"
-                style={{ background:"linear-gradient(135deg,#2563eb,#7c3aed)" }}>
-                {firstName?.[0]??"U"}
-              </div>
-              <div>
-                <p className="text-[12px] font-semibold text-gray-800 leading-tight">{user?.display_name??"User"}</p>
-                <p className="text-[10px] text-gray-400">Account owner</p>
-              </div>
+          ))}
+        </nav>
+        <div className="flex items-center gap-1.5">
+          <button className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors">
+            <MagnifyingGlass size={13} className="text-gray-400"/>
+          </button>
+          <button className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors relative">
+            <Bell size={13} className="text-gray-400"/>
+            <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-blue-500"/>
+          </button>
+          <div className="flex items-center gap-1.5 pl-2 ml-1 border-l border-gray-100">
+            <div className="w-6 h-6 rounded-lg flex items-center justify-center text-white text-[9px] font-black"
+              style={{ background:"linear-gradient(135deg,#2563eb,#7c3aed)" }}>
+              {firstName?.[0]??"U"}
             </div>
+            <span className="text-[11px] font-semibold text-gray-700">{user?.display_name??"User"}</span>
           </div>
         </div>
       </div>
 
-      <div className="px-6 py-6 max-w-[1400px] mx-auto">
+      {/* ── Body — fills remaining height ── */}
+      <div className="flex-1 min-h-0 flex gap-3 p-3">
 
-        {/* ── Greeting ── */}
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-[22px] font-bold text-gray-900">
-            Good {timeOfDay}{firstName && <>,&nbsp;<span className="text-blue-600 font-black">{firstName}</span></>}!
-          </h1>
-          {todayAna > 0 && (
-            <div className="flex items-center gap-2 text-[12px] font-medium text-amber-700 bg-amber-50 border border-amber-100 px-3.5 py-1.5 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"/>
-              {todayAna} analyses run today
+        {/* LEFT */}
+        <div className="flex-1 min-w-0 flex flex-col gap-3">
+
+          {/* Greeting + stats */}
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="shrink-0">
+              <p className="text-[10px] text-gray-400 font-medium">Good {timeOfDay}</p>
+              <h1 className="text-lg font-black text-gray-900 leading-tight">
+                {firstName || "Welcome"}
+                {firstName && <span className="text-blue-600"> ↗</span>}
+              </h1>
             </div>
-          )}
-        </div>
-
-        {/* ── Two-column layout ── */}
-        <div className="flex gap-4">
-
-          {/* LEFT */}
-          <div className="flex-1 min-w-0 space-y-4">
-
-            {/* Stat cards */}
-            <div className="grid grid-cols-4 gap-4">
+            <div className="flex-1 grid grid-cols-4 gap-2">
               {STATS.map(s=><StatCard key={s.label} {...s}/>)}
             </div>
+          </div>
 
-            {/* Bar chart */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-5"
-              style={{ boxShadow:"0 1px 6px rgba(0,0,0,0.04)" }}>
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-[13px] font-bold text-gray-900">Analysis Performance</p>
-                <div className="flex items-center gap-4 text-[11px] text-gray-400 font-medium">
-                  <span>Total: <strong className="text-gray-700">{fmt(analyses.length)}</strong></span>
-                  <span>Avg Score: <strong className="text-gray-700">{avgScore}</strong></span>
-                  <span>Sources: <strong className="text-gray-700">{sources.length}</strong></span>
-                </div>
+          {/* Chart */}
+          <div className="flex-1 min-h-0 bg-white rounded-xl border border-gray-100 p-3"
+            style={{ boxShadow:"0 1px 4px rgba(0,0,0,0.04)" }}>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[11px] font-bold text-gray-800">Analysis Performance</p>
+              <div className="flex items-center gap-3 text-[10px] text-gray-400">
+                <span>Total <strong className="text-gray-700">{fmt(analyses.length)}</strong></span>
+                <span>Score <strong className="text-gray-700">{avgScore}</strong></span>
               </div>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={barData} barSize={24} margin={{top:16,right:0,left:-20,bottom:0}}>
-                  <CartesianGrid vertical={false} stroke="#f0f0f0" />
-                  <XAxis dataKey="label" tick={{ fontSize:10, fill:"#9ca3af" }} axisLine={false} tickLine={false}/>
-                  <YAxis tick={{ fontSize:10, fill:"#9ca3af" }} axisLine={false} tickLine={false}/>
-                  <Tooltip content={<CustomTooltip/>} cursor={{ fill:"rgba(37,99,235,0.04)" }}/>
-                  <Bar dataKey="analyses" radius={[6,6,0,0]}
-                    fill="#e0e7ff"
-                    // Active/highlighted bar handled via cell
-                  />
-                </BarChart>
-              </ResponsiveContainer>
             </div>
+            <ResponsiveContainer width="100%" height="85%">
+              <BarChart data={barData} barSize={14} margin={{top:4,right:0,left:-24,bottom:0}}>
+                <CartesianGrid vertical={false} stroke="#f5f5f5"/>
+                <XAxis dataKey="label" tick={{ fontSize:9, fill:"#9ca3af" }} axisLine={false} tickLine={false}/>
+                <YAxis tick={{ fontSize:9, fill:"#9ca3af" }} axisLine={false} tickLine={false}/>
+                <Tooltip content={<Tip/>} cursor={{ fill:"rgba(37,99,235,0.04)" }}/>
+                <Bar dataKey="analyses" fill="#dbeafe" radius={[4,4,0,0]}/>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
 
-            {/* Table */}
-            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden"
-              style={{ boxShadow:"0 1px 6px rgba(0,0,0,0.04)" }}>
-              <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-50">
-                <p className="text-[13px] font-bold text-gray-900">Recent Activity</p>
-                <div className="flex items-center gap-3">
-                  <button className="flex items-center gap-1.5 text-[11px] font-medium text-gray-400 border border-gray-200 rounded-lg px-2.5 py-1 hover:bg-gray-50 transition-colors">
-                    <FunnelSimple size={11}/> Filter
+          {/* Table */}
+          <div className="shrink-0 bg-white rounded-xl border border-gray-100 overflow-hidden"
+            style={{ boxShadow:"0 1px 4px rgba(0,0,0,0.04)" }}>
+            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-50">
+              <p className="text-[11px] font-bold text-gray-800">Recent Activity</p>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-gray-400">{(page-1)*PER_PAGE+1}–{Math.min(page*PER_PAGE,sorted.length)} of {sorted.length}</span>
+                <div className="flex gap-0.5">
+                  <button disabled={page<=1} onClick={()=>setPage(p=>p-1)}
+                    className="w-5 h-5 rounded border border-gray-200 flex items-center justify-center disabled:opacity-30 hover:bg-gray-50">
+                    <CaretLeft size={9} className="text-gray-500"/>
                   </button>
-                  <span className="text-[11px] text-gray-400">
-                    {(page-1)*PER_PAGE+1}–{Math.min(page*PER_PAGE,sorted.length)} of {sorted.length}
+                  <button disabled={page>=totalPages} onClick={()=>setPage(p=>p+1)}
+                    className="w-5 h-5 rounded border border-gray-200 flex items-center justify-center disabled:opacity-30 hover:bg-gray-50">
+                    <CaretRight size={9} className="text-gray-500"/>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="grid text-[9px] font-semibold text-gray-400 uppercase tracking-wide px-4 py-1.5 bg-gray-50/60 border-b border-gray-50"
+              style={{ gridTemplateColumns:"1.5fr 1fr 1fr 0.8fr 0.6fr" }}>
+              <span>Source</span><span>Hook</span><span>Tone</span><span>Date</span><span>Score</span>
+            </div>
+            {loading ? (
+              <div className="p-3 space-y-1.5">{[1,2,3].map(i=><div key={i} className="h-7 rounded-lg bg-gray-50 animate-pulse"/>)}</div>
+            ) : pageData.length===0 ? (
+              <p className="text-xs text-gray-400 text-center py-6">No analyses yet</p>
+            ) : pageData.map((a,idx)=>(
+              <div key={a.id} className="grid items-center px-4 py-2 text-[11px] hover:bg-gray-50/60 transition-colors"
+                style={{ gridTemplateColumns:"1.5fr 1fr 1fr 0.8fr 0.6fr", borderTop:idx>0?"1px solid #f9fafb":"none" }}>
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-md flex items-center justify-center text-white text-[8px] font-black shrink-0"
+                    style={{ background:`hsl(${((a.post?.source?.name??"?").charCodeAt(0)*47)%360},55%,55%)` }}>
+                    {(a.post?.source?.name??"?")[0].toUpperCase()}
+                  </div>
+                  <span className="font-medium text-gray-800 truncate">{a.post?.source?.name??"Unknown"}</span>
+                </div>
+                <span className="text-gray-500 capitalize truncate">{a.hook_type??"—"}</span>
+                <span className="text-gray-500 capitalize truncate">{a.tone??"—"}</span>
+                <span className="text-gray-400">{a.created_at?shortDate(a.created_at):"—"}</span>
+                <div>{a.score!=null?(
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                    style={{ background:a.score>=7?"#dcfce7":"#f3f4f6", color:a.score>=7?"#15803d":"#6b7280" }}>
+                    {a.score}/10
                   </span>
-                  <div className="flex gap-1">
-                    <button disabled={page<=1} onClick={()=>setPage(p=>p-1)}
-                      className="w-6 h-6 rounded-lg border border-gray-200 flex items-center justify-center disabled:opacity-30 hover:bg-gray-50 transition-colors">
-                      <CaretLeft size={11} className="text-gray-500"/>
-                    </button>
-                    <button disabled={page>=totalPages} onClick={()=>setPage(p=>p+1)}
-                      className="w-6 h-6 rounded-lg border border-gray-200 flex items-center justify-center disabled:opacity-30 hover:bg-gray-50 transition-colors">
-                      <CaretRight size={11} className="text-gray-500"/>
-                    </button>
-                  </div>
-                </div>
+                ):<span className="text-gray-300 text-[10px]">—</span>}</div>
               </div>
+            ))}
+          </div>
+        </div>
 
-              <div className="grid text-[11px] font-semibold text-gray-400 px-5 py-2.5 border-b border-gray-50 uppercase tracking-wide"
-                style={{ gridTemplateColumns:"1.8fr 1fr 1fr 1fr 0.7fr" }}>
-                <span>Source</span><span>Hook Type</span><span>Tone</span><span>Date</span><span>Score</span>
-              </div>
+        {/* RIGHT — narrow panel */}
+        <div className="w-52 shrink-0 flex flex-col gap-2.5">
 
-              {loading ? (
-                <div className="p-4 space-y-2">
-                  {[1,2,3,4,5].map(i=><div key={i} className="h-10 rounded-xl animate-pulse bg-gray-50"/>)}
-                </div>
-              ) : pageData.length===0 ? (
-                <p className="text-sm text-gray-400 text-center py-12">No analyses yet — run the pipeline to get started</p>
-              ) : pageData.map((a,idx)=>(
-                <div key={a.id}
-                  className="grid items-center px-5 py-3 text-[12px] hover:bg-gray-50/70 transition-colors"
-                  style={{ gridTemplateColumns:"1.8fr 1fr 1fr 1fr 0.7fr", borderTop: idx>0?"1px solid #f9fafb":"none" }}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-7 h-7 rounded-xl flex items-center justify-center text-white text-[10px] font-black shrink-0"
-                      style={{ background:`hsl(${((a.post?.source?.name??"?").charCodeAt(0)*47)%360},55%,55%)` }}>
-                      {(a.post?.source?.name??"?")[0].toUpperCase()}
-                    </div>
-                    <span className="font-semibold text-gray-800 truncate">{a.post?.source?.name??"Unknown"}</span>
-                  </div>
-                  <span className="text-gray-500 capitalize">{a.hook_type??"—"}</span>
-                  <span className="text-gray-500 capitalize">{a.tone??"—"}</span>
-                  <span className="text-gray-400">{a.created_at?shortDate(a.created_at):"—"}</span>
-                  <div>
-                    {a.score!=null ? (
-                      <span className="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full"
-                        style={{
-                          background: a.score>=7?"#dcfce7":a.score>=5?"#fef9c3":"#f3f4f6",
-                          color:      a.score>=7?"#15803d":a.score>=5?"#92400e":"#6b7280",
-                        }}>
-                        {a.score}/10
-                      </span>
-                    ):<span className="text-gray-300">—</span>}
-                  </div>
+          {/* Stats summary */}
+          <div className="bg-white rounded-xl border border-gray-100 p-3 shrink-0"
+            style={{ boxShadow:"0 1px 4px rgba(0,0,0,0.04)" }}>
+            <div className="flex items-center justify-between mb-2.5">
+              <p className="text-[11px] font-bold text-gray-800">Overview</p>
+              <button onClick={()=>router.push("/dashboard/analysis")}
+                className="text-[10px] font-semibold text-blue-500 flex items-center gap-0.5 hover:underline">
+                View <CaretRight size={9}/>
+              </button>
+            </div>
+            <div className="space-y-1.5">
+              {[
+                { l:"Posts scraped", v:fmt(posts.length), c:"#2563eb" },
+                { l:"Avg score",     v:`${avgScore}/10`,  c:"#7c3aed" },
+                { l:"Approved ideas",v:String(approved),  c:"#059669" },
+              ].map(({ l, v, c })=>(
+                <div key={l} className="flex items-center justify-between px-2.5 py-1.5 rounded-lg"
+                  style={{ background:"#f8f9fa" }}>
+                  <span className="text-[10px] text-gray-500">{l}</span>
+                  <span className="text-[11px] font-black" style={{ color:c }}>{loading?"—":v}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* RIGHT — fixed width */}
-          <div className="w-72 shrink-0 space-y-4">
-
-            {/* Quick stats */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-4"
-              style={{ boxShadow:"0 1px 6px rgba(0,0,0,0.04)" }}>
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-[13px] font-bold text-gray-900">Intelligence</p>
-                <button onClick={()=>router.push("/dashboard/analysis")}
-                  className="flex items-center gap-1 text-[11px] font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full hover:bg-blue-100 transition-colors">
-                  View <CaretRight size={10}/>
-                </button>
-              </div>
-              <div className="space-y-2">
-                {[
-                  { label:"Total analyses", val:fmt(analyses.length), color:"#2563eb" },
-                  { label:"Posts scraped",  val:fmt(posts.length),    color:"#7c3aed" },
-                  { label:"Avg score",      val:`${avgScore}/10`,     color:"#059669" },
-                ].map(({ label, val, color })=>(
-                  <div key={label} className="flex items-center justify-between px-3 py-2.5 rounded-xl"
-                    style={{ background:"#f8f9fa" }}>
-                    <span className="text-[11px] font-medium text-gray-500">{label}</span>
-                    <span className="text-[13px] font-black" style={{ color }}>{loading?"—":val}</span>
+          {/* Top sources */}
+          <div className="bg-white rounded-xl border border-gray-100 p-3 shrink-0"
+            style={{ boxShadow:"0 1px 4px rgba(0,0,0,0.04)" }}>
+            <p className="text-[11px] font-bold text-gray-800 mb-2.5">Top Sources</p>
+            {loading ? <div className="space-y-2">{[1,2,3].map(i=><div key={i} className="h-6 rounded bg-gray-50 animate-pulse"/>)}</div>
+            : topSrc.length===0 ? <p className="text-[10px] text-gray-400 text-center py-3">No sources yet</p>
+            : topSrc.map(([name,count],i)=>{
+              const c=["#2563eb","#7c3aed","#059669"][i];
+              return (
+                <div key={name} className="mb-2 last:mb-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-semibold text-gray-600 truncate max-w-[110px]">{name}</span>
+                    <span className="text-[10px] font-bold" style={{ color:c }}>{count}</span>
                   </div>
-                ))}
+                  <div className="h-1 rounded-full bg-gray-100 overflow-hidden">
+                    <div className="h-full rounded-full" style={{ width:`${(count/topSrc[0][1])*100}%`, background:c }}/>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Pipeline timeline */}
+          <div className="bg-white rounded-xl border border-gray-100 p-3 flex-1 min-h-0 overflow-hidden"
+            style={{ boxShadow:"0 1px 4px rgba(0,0,0,0.04)" }}>
+            <p className="text-[11px] font-bold text-gray-800 mb-2.5">Pipeline</p>
+            {analyses.slice(0,5).map((a,i)=>(
+              <div key={a.id} className="flex items-start gap-2 mb-2 last:mb-0">
+                <div className="flex flex-col items-center shrink-0 pt-1">
+                  <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background:i===0?"#2563eb":"#e5e7eb" }}/>
+                  {i<4&&<div className="w-px bg-gray-100 mt-1" style={{ height:18 }}/>}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-semibold text-gray-700 truncate">{a.post?.source?.name??"Unknown"}</p>
+                  <p className="text-[9px] text-gray-400">{a.created_at?timeAgo(a.created_at):""}</p>
+                </div>
+                {a.score!=null&&<span className="text-[9px] font-bold shrink-0"
+                  style={{ color:a.score>=7?"#15803d":"#6b7280" }}>{a.score}</span>}
               </div>
+            ))}
+            {!loading&&analyses.length===0&&<p className="text-[10px] text-gray-400 text-center py-4">No activity</p>}
+          </div>
+
+          {/* Ideas */}
+          <div className="bg-white rounded-xl border border-gray-100 p-3 shrink-0"
+            style={{ boxShadow:"0 1px 4px rgba(0,0,0,0.04)" }}>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[11px] font-bold text-gray-800">Ideas</p>
+              <button onClick={()=>router.push("/dashboard/ideas")}
+                className="text-[10px] text-blue-500 hover:underline">See all</button>
             </div>
-
-            {/* Source breakdown */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-4"
-              style={{ boxShadow:"0 1px 6px rgba(0,0,0,0.04)" }}>
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-[13px] font-bold text-gray-900">Top Sources</p>
-                <button onClick={()=>router.push("/dashboard/sources")}
-                  className="text-[11px] text-gray-400 hover:text-gray-600 transition-colors">See all</button>
-              </div>
-              {loading ? (
-                <div className="space-y-3">{[1,2,3].map(i=><div key={i} className="h-9 rounded-xl bg-gray-50 animate-pulse"/>)}</div>
-              ) : topSrc.length===0 ? (
-                <p className="text-[12px] text-gray-400 text-center py-6">No sources yet</p>
-              ) : topSrc.map(([name,count],i)=>{
-                const pct=Math.round((count/topSrc[0][1])*100);
-                const colors=["#2563eb","#7c3aed","#059669","#f59e0b"];
-                return (
-                  <div key={name} className="mb-3 last:mb-0">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 rounded-lg flex items-center justify-center text-white text-[8px] font-black"
-                          style={{ background:colors[i] }}>
-                          {name[0].toUpperCase()}
-                        </div>
-                        <span className="text-[11px] font-semibold text-gray-700 truncate max-w-[120px]">{name}</span>
-                      </div>
-                      <span className="text-[11px] font-bold text-gray-500">{count}</span>
-                    </div>
-                    <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
-                      <div className="h-full rounded-full transition-all" style={{ width:`${pct}%`, background:colors[i] }}/>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Pipeline activity — like tracking timeline */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-4"
-              style={{ boxShadow:"0 1px 6px rgba(0,0,0,0.04)" }}>
-              <p className="text-[13px] font-bold text-gray-900 mb-4">Pipeline Activity</p>
-              {!loading && analyses.slice(0,4).map((a,i)=>(
-                <div key={a.id} className="flex items-start gap-3 mb-3 last:mb-0">
-                  <div className="flex flex-col items-center shrink-0 pt-1">
-                    <div className="w-2 h-2 rounded-full shrink-0"
-                      style={{ background:i===0?"#2563eb":"#e5e7eb" }}/>
-                    {i<3 && <div className="w-px bg-gray-100 mt-1" style={{ height:28 }}/>}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-semibold text-gray-800 truncate">{a.post?.source?.name??"Unknown"}</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">{a.created_at?timeAgo(a.created_at):""}</p>
-                  </div>
-                  {a.score!=null&&(
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0"
-                      style={{ background:a.score>=7?"#dcfce7":"#f3f4f6", color:a.score>=7?"#15803d":"#6b7280" }}>
-                      {a.score}/10
-                    </span>
-                  )}
+            <div className="grid grid-cols-3 gap-1.5">
+              {[
+                { l:"Draft",    v:ideas.filter(i=>i.status==="draft").length,    c:"#6b7280", bg:"#f3f4f6" },
+                { l:"Ready",    v:ideas.filter(i=>i.status==="approved").length, c:"#15803d", bg:"#dcfce7" },
+                { l:"Total",    v:ideas.length,                                  c:"#1d4ed8", bg:"#dbeafe" },
+              ].map(({ l, v, c, bg })=>(
+                <div key={l} className="rounded-lg p-2 text-center" style={{ background:bg }}>
+                  <p className="text-[9px] font-medium" style={{ color:c }}>{l}</p>
+                  <p className="text-base font-black" style={{ color:c }}>{loading?"—":v}</p>
                 </div>
               ))}
-              {!loading && analyses.length===0 && (
-                <p className="text-[12px] text-gray-400 text-center py-4">No activity yet</p>
-              )}
-              {!loading && analyses.length>0 && (
-                <button onClick={()=>router.push("/dashboard/analysis")}
-                  className="w-full mt-2 py-2 rounded-xl text-[11px] font-semibold text-blue-600 border border-blue-100 hover:bg-blue-50 transition-colors">
-                  View full intelligence →
-                </button>
-              )}
             </div>
-
-            {/* Ideas pipeline */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-4"
-              style={{ boxShadow:"0 1px 6px rgba(0,0,0,0.04)" }}>
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-[13px] font-bold text-gray-900">Ideas</p>
-                <button onClick={()=>router.push("/dashboard/ideas")}
-                  className="text-[11px] text-gray-400 hover:text-gray-600 transition-colors">See all</button>
-              </div>
-              <div className="space-y-2">
-                {[
-                  { label:"Draft",    val:ideas.filter(i=>i.status==="draft").length,    bg:"#f3f4f6", color:"#6b7280" },
-                  { label:"Approved", val:ideas.filter(i=>i.status==="approved").length, bg:"#dcfce7", color:"#15803d" },
-                  { label:"Total",    val:ideas.length,                                  bg:"#dbeafe", color:"#1d4ed8" },
-                ].map(({ label, val, bg, color })=>(
-                  <div key={label} className="flex items-center justify-between px-3 py-2.5 rounded-xl"
-                    style={{ background:bg }}>
-                    <span className="text-[11px] font-medium" style={{ color }}>{label}</span>
-                    <span className="text-[14px] font-black" style={{ color }}>{loading?"—":val}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
           </div>
+
         </div>
       </div>
     </div>

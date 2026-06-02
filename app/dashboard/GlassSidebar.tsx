@@ -41,15 +41,13 @@ export default function GlassSidebar() {
 
   return (
     <aside
-      className="fixed left-3 top-3 bottom-3 z-30 flex flex-col items-center py-4 gap-1"
+      className="fixed left-0 top-0 bottom-0 z-30 flex flex-col items-center py-4 gap-1"
       style={{
-        width: 44,
-        borderRadius: 16,
-        background: "rgba(255,255,255,0.38)",
-        backdropFilter: "blur(48px) saturate(2.2) brightness(1.08)",
-        WebkitBackdropFilter: "blur(48px) saturate(2.2) brightness(1.08)",
-        border: "1px solid rgba(255,255,255,0.55)",
-        boxShadow: "0 8px 40px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.9), inset 0 -1px 0 rgba(0,0,0,0.04)",
+        width: 48,
+        background: "rgba(255,255,255,0.55)",
+        backdropFilter: "blur(20px) saturate(1.4)",
+        WebkitBackdropFilter: "blur(20px) saturate(1.4)",
+        borderRight: "1px solid rgba(0,0,0,0.06)",
       }}>
 
       {/* Logo */}
